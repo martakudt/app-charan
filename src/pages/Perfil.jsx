@@ -69,25 +69,36 @@ function roundDown5(n) {
   return Math.floor(n / 5) * 5
 }
 
-function userAttended(event, uid, nombre) {
+function fmtEur(n) {
+  return new Intl.NumberFormat('de-DE').format(n)
+}
+
+function removeTildes(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+function userAttended(event, uid, nombre, claveHistorico) {
   const a = event.asistencia || {}
   if (a[uid] === 'voy') return true
-  // Check manual keys from 2025 import by matching name
+  if (claveHistorico) {
+    const key = 'miembro_' + claveHistorico.toLowerCase()
+    if (a[key] === 'voy') return true
+  }
   if (nombre) {
-    const nameLower = nombre.trim().split(/\s+/)[0].toLowerCase()
+    const nameLower = removeTildes(nombre.trim().split(/\s+/)[0].toLowerCase())
     return Object.entries(a).some(([key, val]) =>
-      val === 'voy' && key.startsWith('miembro_') && key.replace('miembro_', '') === nameLower
+      val === 'voy' && key.startsWith('miembro_') && removeTildes(key.replace('miembro_', '')) === nameLower
     )
   }
   return false
 }
 
-function MisActuaciones({ events, uid, year, nombre }) {
+function MisActuaciones({ events, uid, year, nombre, claveHistorico }) {
   const now = new Date()
   const misActuaciones = events
     .filter((e) => {
       const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
-      return d < now && d.getFullYear() === year && e.tipo === 'actuacion' && userAttended(e, uid, nombre)
+      return d < now && d.getFullYear() === year && e.tipo === 'actuacion' && userAttended(e, uid, nombre, claveHistorico)
     })
     .sort((a, b) => {
       const da = a.fecha?.toDate ? a.fecha.toDate() : new Date(a.fecha)
@@ -117,7 +128,7 @@ function MisActuaciones({ events, uid, year, nombre }) {
       <h3 className="mis-actuaciones-title">Mis actuaciones</h3>
 
       <div className="mis-actuaciones-total">
-        <span className="mis-actuaciones-total-value">{totalGanado}€</span>
+        <span className="mis-actuaciones-total-value">{fmtEur(totalGanado)}€</span>
         <span className="mis-actuaciones-total-label">Total acumulado</span>
       </div>
 
@@ -135,7 +146,7 @@ function MisActuaciones({ events, uid, year, nombre }) {
                 <div className="mis-actuaciones-date">{formatDateShort(act.fecha)}</div>
               </div>
               <div className="mis-actuaciones-amount">
-                {porPersona > 0 ? `${porPersona}€` : '—'}
+                {porPersona > 0 ? `${fmtEur(porPersona)}€` : '—'}
               </div>
             </div>
           )
@@ -178,8 +189,9 @@ export default function Perfil() {
   const pastEnsayos = pastEvents.filter((e) => e.tipo === 'ensayo')
 
   const nombre = userData?.nombre
-  const actuacionesAsistidas = pastActuaciones.filter((e) => userAttended(e, user?.uid, nombre)).length
-  const ensayosAsistidos = pastEnsayos.filter((e) => userAttended(e, user?.uid, nombre)).length
+  const claveHistorico = userData?.claveHistorico
+  const actuacionesAsistidas = pastActuaciones.filter((e) => userAttended(e, user?.uid, nombre, claveHistorico)).length
+  const ensayosAsistidos = pastEnsayos.filter((e) => userAttended(e, user?.uid, nombre, claveHistorico)).length
 
   function openEdit() {
     setEditNombre(userData?.nombre || '')
@@ -246,7 +258,7 @@ export default function Perfil() {
         </div>
       </div>
 
-      <MisActuaciones events={events} uid={user?.uid} year={selectedYear} nombre={nombre} />
+      <MisActuaciones events={events} uid={user?.uid} year={selectedYear} nombre={nombre} claveHistorico={claveHistorico} />
 
       <div className="perfil-actions">
         <Button variant="secondary" onClick={openEdit}>Editar perfil</Button>
@@ -297,6 +309,22 @@ export default function Perfil() {
                   <div className="member-header">
                     <span className="member-name">{u.nombre}</span>
                     <span className="member-instrument">{u.instrumento}</span>
+                  </div>
+                  <div className="toggle-row">
+                    <span>Nombre histórico</span>
+                    <form className="clave-historico-form" onSubmit={(e) => {
+                      e.preventDefault()
+                      const val = e.target.elements.clave.value
+                      updateUser(u.id, { claveHistorico: val })
+                    }}>
+                      <input
+                        name="clave"
+                        className="clave-historico-input"
+                        placeholder="ej: samuel"
+                        defaultValue={u.claveHistorico || ''}
+                      />
+                      <button type="submit" className="clave-historico-btn">✓</button>
+                    </form>
                   </div>
                   <div className="toggle-row">
                     <span>Gestionar calendario</span>

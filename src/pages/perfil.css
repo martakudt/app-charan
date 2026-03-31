@@ -339,6 +339,30 @@
   transform: translateX(20px);
 }
 
+.clave-historico-form {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.clave-historico-input {
+  width: 100px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  text-align: right;
+}
+
+.clave-historico-btn {
+  padding: 4px 8px;
+  background: var(--color-success);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .member-count {
   text-align: center;
   font-size: 0.9rem;

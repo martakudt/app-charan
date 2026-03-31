@@ -31,6 +31,32 @@ function formatDateShort(timestamp) {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function fmtEur(n) {
+  return new Intl.NumberFormat('de-DE').format(n)
+}
+
+function removeTildes(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+function userAttended(event, uid, nombre, claveHistorico) {
+  const a = event.asistencia || {}
+  if (a[uid] === 'voy') return true
+  // Check by claveHistorico first (manual link set by admin)
+  if (claveHistorico) {
+    const key = 'miembro_' + claveHistorico.toLowerCase()
+    if (a[key] === 'voy') return true
+  }
+  // Fallback: match by first name without tildes
+  if (nombre) {
+    const nameLower = removeTildes(nombre.trim().split(/\s+/)[0].toLowerCase())
+    return Object.entries(a).some(([key, val]) =>
+      val === 'voy' && key.startsWith('miembro_') && removeTildes(key.replace('miembro_', '')) === nameLower
+    )
+  }
+  return false
+}
+
 function getRefuerzosCount(act) {
   if (Array.isArray(act.refuerzos)) return act.refuerzos.length
   return act.refuerzos || 0
@@ -51,7 +77,22 @@ function EconomiaSection({ actuaciones, users }) {
 
   function getUserName(uid) {
     const u = users.find((u) => u.id === uid)
-    return u ? u.nombre : 'Desconocido'
+    if (u) return u.nombre
+    // Check if it's a manual key from 2025 import
+    if (uid.startsWith('miembro_')) {
+      const name = uid.replace('miembro_', '')
+      // Try to find registered user by claveHistorico or name match
+      const matched = users.find((u) => {
+        if (u.claveHistorico && u.claveHistorico.toLowerCase() === name) return true
+        if (u.nombre && removeTildes(u.nombre.trim().split(/\s+/)[0].toLowerCase()) === removeTildes(name)) return true
+        return false
+      })
+      if (matched) return matched.nombre
+      // Capitalize the manual key name
+      return name.charAt(0).toUpperCase() + name.slice(1)
+    }
+    if (uid.startsWith('asistente_2025_')) return 'Miembro'
+    return 'Desconocido'
   }
 
   async function togglePagado(actId, personKey, currentPagados) {
@@ -104,11 +145,11 @@ function EconomiaSection({ actuaciones, users }) {
 
       <div className="economia-totals">
         <div className="economia-total-item">
-          <span className="economia-total-value">{totalIngresos}€</span>
+          <span className="economia-total-value">{fmtEur(totalIngresos)}€</span>
           <span className="economia-total-label">Total ingresos</span>
         </div>
         <div className="economia-total-item">
-          <span className="economia-total-value economia-bote">{totalBote}€</span>
+          <span className="economia-total-value economia-bote">{fmtEur(totalBote)}€</span>
           <span className="economia-total-label">Bote acumulado</span>
         </div>
       </div>
@@ -161,11 +202,11 @@ function EconomiaSection({ actuaciones, users }) {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                       </svg>
-                      <span>{precio}€ total</span>
+                      <span>{fmtEur(precio)}€ total</span>
                     </div>
                     <div className="economia-resultado">
-                      <span className="economia-por-persona">{porPersona}€/persona</span>
-                      <span className="economia-bote-badge">Bote: {bote}€</span>
+                      <span className="economia-por-persona">{fmtEur(porPersona)}€/persona</span>
+                      <span className="economia-bote-badge">Bote: {fmtEur(bote)}€</span>
                     </div>
                   </>
                 ) : (
@@ -193,7 +234,7 @@ function EconomiaSection({ actuaciones, users }) {
                               {isPagado && '✓'}
                             </div>
                             <span className="pagos-name">{getUserName(uid)}</span>
-                            <span className="pagos-amount">{porPersona}€</span>
+                            <span className="pagos-amount">{fmtEur(porPersona)}€</span>
                           </div>
                         )
                       })}
@@ -206,7 +247,7 @@ function EconomiaSection({ actuaciones, users }) {
                               {isPagado && '✓'}
                             </div>
                             <span className="pagos-name">{name} <span className="pagos-refuerzo-tag">Refuerzo</span></span>
-                            <span className="pagos-amount">{porPersona}€</span>
+                            <span className="pagos-amount">{fmtEur(porPersona)}€</span>
                           </div>
                         )
                       })}
@@ -299,10 +340,22 @@ function IngresosChart({ actuaciones }) {
     totalActos += 1
   })
 
-  const months = Object.values(monthlyData).sort((a, b) => {
-    if (a.year !== b.year) return a.year - b.year
-    return a.month - b.month
-  })
+  // Fill all 12 months, even if no events
+  const year = actuaciones.length > 0
+    ? (actuaciones[0].fecha?.toDate ? actuaciones[0].fecha.toDate() : new Date(actuaciones[0].fecha)).getFullYear()
+    : new Date().getFullYear()
+
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth()
+  // For current year: show up to current month. For past years: show all 12
+  const lastMonth = year === currentYear ? currentMonth : 11
+
+  const months = []
+  for (let i = 0; i <= lastMonth; i++) {
+    const key = `${year}-${String(i).padStart(2,'0')}`
+    months.push(monthlyData[key] || { month: i, year, ingresos: 0, actos: 0 })
+  }
 
   const maxIngresos = Math.max(...months.map((m) => m.ingresos), 1)
 
@@ -314,11 +367,11 @@ function IngresosChart({ actuaciones }) {
 
       <div className="chart-totals">
         <div className="chart-total-item">
-          <span className="chart-total-value">{totalIngresos.toLocaleString('es-ES')}€</span>
+          <span className="chart-total-value">{fmtEur(totalIngresos)}€</span>
           <span className="chart-total-label">Total cobrado</span>
         </div>
         <div className="chart-total-item">
-          <span className="chart-total-value">{totalRepartido.toLocaleString('es-ES')}€</span>
+          <span className="chart-total-value">{fmtEur(totalRepartido)}€</span>
           <span className="chart-total-label">Total repartido</span>
         </div>
         <div className="chart-total-item">
@@ -333,7 +386,7 @@ function IngresosChart({ actuaciones }) {
             const pct = (m.ingresos / maxIngresos) * 100
             return (
               <div key={`${m.year}-${m.month}`} className="chart-bar-col">
-                <div className="chart-bar-value">{m.ingresos}€</div>
+                <div className="chart-bar-value">{fmtEur(m.ingresos)}€</div>
                 <div className="chart-bar-track">
                   <div
                     className="chart-bar-fill"
@@ -388,11 +441,23 @@ export default function Gestion() {
   const approvedUsers = users.filter((u) => u.estado === 'aprobado')
 
   const memberStats = approvedUsers.map((u) => {
-    const actAsistidas = pastActuaciones.filter((e) => e.asistencia?.[u.id] === 'voy').length
-    const ensAsistidos = pastEnsayos.filter((e) => e.asistencia?.[u.id] === 'voy').length
-    const totalPast = pastEvents.length
-    const totalAsistidos = pastEvents.filter((e) => e.asistencia?.[u.id] === 'voy').length
-    const pctTotal = totalPast > 0 ? Math.round((totalAsistidos / totalPast) * 100) : 0
+    const actAsistidas = pastActuaciones.filter((e) => userAttended(e, u.id, u.nombre, u.claveHistorico)).length
+    const ensAsistidos = pastEnsayos.filter((e) => userAttended(e, u.id, u.nombre, u.claveHistorico)).length
+    const totalFiltered = filteredEvents.length
+    const totalAsistidos = filteredEvents.filter((e) => userAttended(e, u.id, u.nombre, u.claveHistorico)).length
+    const pctTotal = totalFiltered > 0 ? Math.round((totalAsistidos / totalFiltered) * 100) : 0
+
+    // Calculate earnings for this member
+    const ingresos = pastActuaciones
+      .filter((e) => userAttended(e, u.id, u.nombre, u.claveHistorico))
+      .reduce((sum, act) => {
+        if (!act.precio) return sum
+        const asist = Object.values(act.asistencia || {}).filter((v) => v === 'voy').length
+        const refs = getRefuerzosCount(act)
+        const total = asist + refs
+        if (total === 0) return sum
+        return sum + roundDown5(act.precio / total)
+      }, 0)
 
     return {
       ...u,
@@ -401,6 +466,7 @@ export default function Gestion() {
       ensAsistidos,
       ensTotal: pastEnsayos.length,
       pctTotal,
+      ingresos,
     }
   }).sort((a, b) => b.pctTotal - a.pctTotal)
 
@@ -456,6 +522,7 @@ export default function Gestion() {
           <span className="direccion-col-name">Miembro</span>
           <span className="direccion-col-stat">Act.</span>
           <span className="direccion-col-stat">Ens.</span>
+          <span className="direccion-col-stat">€</span>
           <span className="direccion-col-stat">Total</span>
         </div>
         {memberStats.map((m) => (
@@ -474,6 +541,9 @@ export default function Gestion() {
             <span className="direccion-col-stat">
               <span className="direccion-stat-value">{m.ensAsistidos}</span>
               <span className="direccion-stat-max">/{m.ensTotal}</span>
+            </span>
+            <span className="direccion-col-stat">
+              <span className="direccion-stat-value">{fmtEur(m.ingresos)}€</span>
             </span>
             <span className="direccion-col-stat">
               <span className={`direccion-pct ${m.pctTotal >= 75 ? 'pct-high' : m.pctTotal >= 50 ? 'pct-mid' : 'pct-low'}`}>
