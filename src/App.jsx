@@ -8,6 +8,7 @@ import EventForm from './pages/EventForm'
 import Partituras from './pages/Partituras'
 import Carpeta from './pages/Carpeta'
 import Perfil from './pages/Perfil'
+import Gestion from './pages/Gestion'
 import AppLayout from './components/layout/AppLayout'
 
 function AppRoutes() {
@@ -35,6 +36,7 @@ function AppRoutes() {
         <Route path="/agenda/:id/editar" element={<EventForm />} />
         <Route path="/partituras" element={<Partituras />} />
         <Route path="/partituras/:carpetaId" element={<Carpeta />} />
+        <Route path="/gestion" element={<Gestion />} />
         <Route path="/perfil" element={<Perfil />} />
       </Route>
       <Route path="*" element={<Navigate to="/agenda" replace />} />

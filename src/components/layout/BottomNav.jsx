@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import './layout.css'
 
 function IconAgenda({ active }) {
@@ -17,6 +18,14 @@ function IconPartituras({ active }) {
   )
 }
 
+function IconGestion({ active }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? 'var(--color-primary)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>
+    </svg>
+  )
+}
+
 function IconPerfil({ active }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? 'var(--color-primary)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -25,15 +34,17 @@ function IconPerfil({ active }) {
   )
 }
 
-const tabs = [
-  { path: '/agenda', label: 'Agenda', Icon: IconAgenda },
-  { path: '/partituras', label: 'Partituras', Icon: IconPartituras },
-  { path: '/perfil', label: 'Perfil', Icon: IconPerfil },
-]
-
 export default function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { canAccessDireccion } = useAuth()
+
+  const tabs = [
+    { path: '/agenda', label: 'Agenda', Icon: IconAgenda },
+    { path: '/partituras', label: 'Partituras', Icon: IconPartituras },
+    ...(canAccessDireccion ? [{ path: '/gestion', label: 'Gestión', Icon: IconGestion }] : []),
+    { path: '/perfil', label: 'Perfil', Icon: IconPerfil },
+  ]
 
   return (
     <nav className="bottom-nav">
