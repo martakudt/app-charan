@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useEvents } from '../hooks/useEvents'
-import { uploadEventImage } from '../services/storage'
 import Button from '../components/ui/Button'
 import './event-form.css'
 
@@ -20,8 +19,6 @@ export default function EventForm() {
   const [hora, setHora] = useState('')
   const [ubicacion, setUbicacion] = useState('')
   const [descripcion, setDescripcion] = useState('')
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -31,7 +28,6 @@ export default function EventForm() {
       setTipo(existing.tipo || 'actuacion')
       setUbicacion(existing.ubicacion || '')
       setDescripcion(existing.descripcion || '')
-      setImagePreview(existing.imagenUrl || '')
       if (existing.fecha) {
         const d = existing.fecha.toDate ? existing.fecha.toDate() : new Date(existing.fecha)
         setFecha(d.toISOString().split('T')[0])
@@ -39,14 +35,6 @@ export default function EventForm() {
       }
     }
   }, [existing])
-
-  function handleImageChange(e) {
-    const file = e.target.files?.[0]
-    if (file) {
-      setImageFile(file)
-      setImagePreview(URL.createObjectURL(file))
-    }
-  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -59,12 +47,6 @@ export default function EventForm() {
 
     try {
       const fechaDate = new Date(`${fecha}T${hora}`)
-      let imagenUrl = isEdit ? (existing?.imagenUrl || '') : ''
-
-      if (imageFile) {
-        const tempId = isEdit ? id : Date.now().toString()
-        imagenUrl = await uploadEventImage(imageFile, tempId)
-      }
 
       const data = {
         nombre: nombre.trim(),
@@ -72,7 +54,6 @@ export default function EventForm() {
         fecha: fechaDate,
         ubicacion: ubicacion.trim(),
         descripcion: descripcion.trim(),
-        imagenUrl,
         creadoPor: user.uid,
       }
 
@@ -137,12 +118,6 @@ export default function EventForm() {
         <div className="form-group">
           <label className="form-label">Descripción (opcional)</label>
           <textarea rows={3} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Detalles del evento..." />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Foto (opcional)</label>
-          <input type="file" accept="image/*" onChange={handleImageChange} />
-          {imagePreview && <img src={imagePreview} alt="Preview" className="image-preview" />}
         </div>
 
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginBottom: 8 }}>{error}</p>}
