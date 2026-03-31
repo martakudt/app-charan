@@ -201,7 +201,10 @@ export default function Agenda() {
   return (
     <div>
       <div className="agenda-header">
-        <h1 className="agenda-title">Agenda</h1>
+        <div className="page-header">
+          <img src="/logo_mandanga.png" alt="" className="page-header-logo" />
+          <h1 className="page-header-title">Agenda</h1>
+        </div>
         <div className="agenda-tabs">
           <button
             className={`agenda-tab${tab === 'proximos' ? ' agenda-tab-active' : ''}`}

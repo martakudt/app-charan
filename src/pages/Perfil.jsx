@@ -47,9 +47,13 @@ export default function Perfil() {
 
   return (
     <div>
+      <div className="page-header" style={{ justifyContent: 'center' }}>
+        <img src="/logo_mandanga.png" alt="" className="page-header-logo" />
+        <h1 className="page-header-title">Perfil</h1>
+      </div>
       <div className="perfil-header">
         <h1 className="perfil-name">{userData?.nombre}</h1>
-        <div className="perfil-instrument">🎵 {userData?.instrumento}</div>
+        <div className="perfil-instrument">{userData?.instrumento}</div>
         <p className="perfil-since">
           En La Mandanga desde el {formatDate(userData?.fechaRegistro)}
         </p>
