@@ -56,9 +56,9 @@ export default function EventDetail() {
   }
 
   const attendanceGroups = [
-    { key: 'voy', label: 'Voy', emoji: '✅', color: 'var(--color-success)' },
-    { key: 'nose', label: 'No sé', emoji: '🤷', color: 'var(--color-warning)' },
-    { key: 'no', label: 'No voy', emoji: '❌', color: 'var(--color-danger)' },
+    { key: 'voy', label: 'Asisten', color: 'var(--color-success)', dotColor: '#22C55E' },
+    { key: 'nose', label: 'Pendiente', color: 'var(--color-warning)', dotColor: '#F59E0B' },
+    { key: 'no', label: 'No asisten', color: 'var(--color-danger)', dotColor: '#EF4444' },
   ]
 
   return (
@@ -81,8 +81,18 @@ export default function EventDetail() {
       <h1 className="event-detail-title">{event.nombre}</h1>
 
       <div className="event-detail-info">
-        <span>📅 {formatDate(event.fecha)}</span>
-        <span>📍 {event.ubicacion}</span>
+        <div className="event-detail-info-row">
+          <svg className="event-detail-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span>{formatDate(event.fecha)}</span>
+        </div>
+        <div className="event-detail-info-row">
+          <svg className="event-detail-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+          <span>{event.ubicacion}</span>
+        </div>
       </div>
 
       {event.descripcion && (
@@ -90,34 +100,34 @@ export default function EventDetail() {
       )}
 
       <div className="vote-section">
-        <h3>¿Vas a ir?</h3>
+        <h3>Tu respuesta</h3>
         <div className="vote-buttons">
           <button
-            className={`vote-btn${myVote === 'voy' ? ' vote-btn-active' : ''}`}
-            style={{ background: '#dcfce7', color: 'var(--color-success)' }}
+            className={`vote-btn${myVote === 'voy' ? ' vote-btn-active vote-voy' : ''}`}
             onClick={() => handleVote('voy')}
           >
-            ✅ Voy
+            <span className="vote-btn-icon" style={{ background: '#22C55E' }}>✓</span>
+            Voy
           </button>
           <button
-            className={`vote-btn${myVote === 'nose' ? ' vote-btn-active' : ''}`}
-            style={{ background: '#fef3c7', color: 'var(--color-warning)' }}
+            className={`vote-btn${myVote === 'nose' ? ' vote-btn-active vote-nose' : ''}`}
             onClick={() => handleVote('nose')}
           >
-            🤷 No sé
+            <span className="vote-btn-icon" style={{ background: '#F59E0B' }}>?</span>
+            No sé
           </button>
           <button
-            className={`vote-btn${myVote === 'no' ? ' vote-btn-active' : ''}`}
-            style={{ background: '#fee2e2', color: 'var(--color-danger)' }}
+            className={`vote-btn${myVote === 'no' ? ' vote-btn-active vote-no' : ''}`}
             onClick={() => handleVote('no')}
           >
-            ❌ No voy
+            <span className="vote-btn-icon" style={{ background: '#EF4444' }}>✕</span>
+            No voy
           </button>
         </div>
       </div>
 
-      <Card>
-        <h3 style={{ marginBottom: 16, fontSize: '1rem' }}>Asistencia</h3>
+      <Card className="attendance-card">
+        <div className="attendance-header">Asistencia</div>
         {attendanceGroups.map((group) => {
           const uids = Object.entries(event.asistencia || {})
             .filter(([, v]) => v === group.key)
@@ -125,11 +135,13 @@ export default function EventDetail() {
 
           return (
             <div key={group.key} className="attendance-group">
-              <h4>
-                {group.emoji} {group.label} ({uids.length})
-              </h4>
+              <div className="attendance-group-header">
+                <span className="attendance-group-dot" style={{ background: group.dotColor }} />
+                <span>{group.label}</span>
+                <span className="attendance-group-count">({uids.length})</span>
+              </div>
               {uids.length === 0 ? (
-                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', paddingLeft: 12 }}>Nadie</p>
+                <p className="attendance-empty">Nadie</p>
               ) : (
                 <div className="attendance-list">
                   {uids.map((uid) => {

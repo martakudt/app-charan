@@ -15,7 +15,7 @@ function AppRoutes() {
 
   if (loading) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <img src="/logo.svg" alt="La Mandanga" style={{ width: 80, opacity: 0.6 }} />
+      <img src="/logo_mandanga.png" alt="La Mandanga" style={{ width: 80, opacity: 0.6 }} />
     </div>
   }
 

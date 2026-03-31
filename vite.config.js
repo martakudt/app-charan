@@ -18,7 +18,7 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: '/logo.svg',
+            src: '/logo_mandanga.png',
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any'

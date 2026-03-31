@@ -3,13 +3,11 @@
 }
 
 .event-detail-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  display: block;
   font-size: 0.9rem;
   color: var(--color-primary);
   background: none;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .event-detail-image {
@@ -26,35 +24,54 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: white;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .event-detail-title {
   font-size: 1.4rem;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-top: 4px;
+  margin-bottom: 16px;
 }
 
 .event-detail-info {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: 28px;
   font-size: 0.9rem;
   color: var(--color-text-secondary);
 }
 
+.event-detail-info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.event-detail-info-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
 .event-detail-description {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   line-height: 1.5;
 }
 
+/* Vote section */
 .vote-section {
   margin-bottom: 24px;
 }
 
 .vote-section h3 {
-  font-size: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: 12px;
 }
 
@@ -65,33 +82,99 @@
 
 .vote-btn {
   flex: 1;
-  padding: 12px;
-  border-radius: var(--radius-sm);
+  padding: 14px 8px;
+  border-radius: var(--radius);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-align: center;
-  border: 2px solid transparent;
-  opacity: 0.5;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
   transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.vote-btn:hover {
+  border-color: var(--color-text-secondary);
+}
+
+.vote-btn-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: white;
+  font-weight: 700;
 }
 
 .vote-btn-active {
-  opacity: 1;
   border-color: currentColor;
-  transform: scale(1.05);
+  transform: scale(1.03);
+  box-shadow: var(--shadow);
 }
 
-.attendance-group {
+.vote-btn-active.vote-voy {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background: #f0fdf4;
+}
+
+.vote-btn-active.vote-nose {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  background: #fffbeb;
+}
+
+.vote-btn-active.vote-no {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: #fef2f2;
+}
+
+/* Attendance */
+.attendance-card {
+  margin-top: 8px;
+}
+
+.attendance-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: 16px;
 }
 
-.attendance-group h4 {
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 8px;
+.attendance-group {
+  margin-bottom: 20px;
+}
+
+.attendance-group-header {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.attendance-group-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.attendance-group-count {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  margin-left: 2px;
 }
 
 .attendance-list {
@@ -104,10 +187,17 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: var(--color-background);
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
+}
+
+.attendance-empty {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  padding-left: 18px;
+  font-style: italic;
 }
 
 .attendance-instrument {

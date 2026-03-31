@@ -95,7 +95,6 @@ export default function EventForm() {
           <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
             <option value="actuacion">Actuación</option>
             <option value="ensayo">Ensayo</option>
-            <option value="otro">Otro</option>
           </select>
         </div>
 

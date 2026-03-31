@@ -48,7 +48,7 @@ export default function Login() {
   return (
     <div className="login-screen">
       <div className="login-card">
-        <img src="/logo.svg" alt="La Mandanga" className="login-logo" />
+        <img src="/logo_mandanga.png" alt="La Mandanga" className="login-logo" />
         <h1 className="login-title">La Mandanga</h1>
         <p className="login-subtitle">
           {isRegister ? 'Crea tu cuenta' : 'Inicia sesión para acceder'}
