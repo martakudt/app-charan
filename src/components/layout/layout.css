@@ -1,0 +1,43 @@
+.app-layout {
+  min-height: 100vh;
+  padding-bottom: var(--nav-height);
+}
+
+.app-main {
+  padding: 16px;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 90;
+}
+
+.nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 16px;
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-tab-active {
+  color: var(--color-primary);
+}
+
+.nav-tab-icon {
+  font-size: 24px;
+}
