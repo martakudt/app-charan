@@ -11,7 +11,8 @@ export async function listFolder(folderId) {
   const res = await fetch(url)
   if (!res.ok) throw new Error('Error al cargar carpeta')
   const data = await res.json()
-  return data.files || []
+  const files = data.files || []
+  return files.sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true }))
 }
 
 export function isFolder(file) {

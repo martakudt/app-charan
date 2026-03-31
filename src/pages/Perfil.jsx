@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { logout } from '../services/auth'
 import { updateUser } from '../services/firestore'
 import { useUsers } from '../hooks/useUsers'
+import { useEvents } from '../hooks/useEvents'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
@@ -14,9 +15,54 @@ function formatDate(timestamp) {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+function getInitials(name) {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return parts[0].substring(0, 2).toUpperCase()
+}
+
+function Avatar({ name, size = 80 }) {
+  return (
+    <div className="avatar" style={{ width: size, height: size, fontSize: size * 0.38 }}>
+      {getInitials(name)}
+    </div>
+  )
+}
+
+function StatRing({ value, max, label, color }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0
+  const radius = 36
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (pct / 100) * circumference
+
+  return (
+    <div className="stat-card">
+      <div className="stat-ring-container">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r={radius} fill="none" stroke="var(--color-border)" strokeWidth="6" />
+          <circle
+            cx="44" cy="44" r={radius} fill="none"
+            stroke={color} strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            transform="rotate(-90 44 44)"
+            style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+          />
+        </svg>
+        <div className="stat-ring-value">{pct}%</div>
+      </div>
+      <div className="stat-numbers">{value}/{max}</div>
+      <div className="stat-label">{label}</div>
+    </div>
+  )
+}
+
 export default function Perfil() {
   const { user, userData, isAdmin } = useAuth()
   const { users, loading, approveUser, rejectUser, togglePermission } = useUsers()
+  const { events } = useEvents()
   const [showEdit, setShowEdit] = useState(false)
   const [editNombre, setEditNombre] = useState('')
   const [editInstrumento, setEditInstrumento] = useState('')
@@ -25,6 +71,18 @@ export default function Perfil() {
     'Clarinete', 'Saxofón', 'Trompeta', 'Trombón', 'Tuba',
     'Bombardino', 'Flauta', 'Percusión', 'Caja', 'Bombo', 'Otro'
   ]
+
+  // Calculate stats from past events
+  const now = new Date()
+  const pastEvents = events.filter((e) => {
+    const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
+    return d < now
+  })
+  const pastActuaciones = pastEvents.filter((e) => e.tipo === 'actuacion')
+  const pastEnsayos = pastEvents.filter((e) => e.tipo === 'ensayo')
+
+  const actuacionesAsistidas = pastActuaciones.filter((e) => e.asistencia?.[user?.uid] === 'voy').length
+  const ensayosAsistidos = pastEnsayos.filter((e) => e.asistencia?.[user?.uid] === 'voy').length
 
   function openEdit() {
     setEditNombre(userData?.nombre || '')
@@ -51,12 +109,32 @@ export default function Perfil() {
         <img src="/logo_mandanga.png" alt="" className="page-header-logo" />
         <h1 className="page-header-title">Perfil</h1>
       </div>
+
       <div className="perfil-header">
+        <Avatar name={userData?.nombre} />
         <h1 className="perfil-name">{userData?.nombre}</h1>
         <div className="perfil-instrument">{userData?.instrumento}</div>
         <p className="perfil-since">
           En La Mandanga desde el {formatDate(userData?.fechaRegistro)}
         </p>
+      </div>
+
+      <div className="stats-section">
+        <h3 className="stats-title">Mi asistencia</h3>
+        <div className="stats-grid">
+          <StatRing
+            value={actuacionesAsistidas}
+            max={pastActuaciones.length}
+            label="Actuaciones"
+            color="#E91E7B"
+          />
+          <StatRing
+            value={ensayosAsistidos}
+            max={pastEnsayos.length}
+            label="Ensayos"
+            color="#666666"
+          />
+        </div>
       </div>
 
       <div className="perfil-actions">
