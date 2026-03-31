@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { logout } from '../services/auth'
-import { updateUser } from '../services/firestore'
+import { updateUser, updateEvent } from '../services/firestore'
 import { useUsers } from '../hooks/useUsers'
 import { useEvents } from '../hooks/useEvents'
 import Card from '../components/ui/Card'
@@ -67,6 +67,146 @@ function MiniAvatar({ name }) {
   )
 }
 
+function roundDown5(n) {
+  return Math.floor(n / 5) * 5
+}
+
+function formatDateShort(timestamp) {
+  if (!timestamp) return ''
+  const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function EconomiaSection({ actuaciones }) {
+  const [editingId, setEditingId] = useState(null)
+  const [editPrecio, setEditPrecio] = useState('')
+  const [editRefuerzos, setEditRefuerzos] = useState('')
+
+  function openEdit(act) {
+    setEditingId(act.id)
+    setEditPrecio(act.precio ?? '')
+    setEditRefuerzos(act.refuerzos ?? 0)
+  }
+
+  async function handleSave() {
+    await updateEvent(editingId, {
+      precio: Number(editPrecio) || 0,
+      refuerzos: Number(editRefuerzos) || 0,
+    })
+    setEditingId(null)
+  }
+
+  const totalIngresos = actuaciones.reduce((sum, a) => sum + (a.precio || 0), 0)
+  const totalBote = actuaciones.reduce((sum, a) => {
+    if (!a.precio) return sum
+    const asistentes = Object.values(a.asistencia || {}).filter((v) => v === 'voy').length
+    const total = asistentes + (a.refuerzos || 0)
+    if (total === 0) return sum
+    const porPersona = roundDown5(a.precio / total)
+    return sum + (a.precio - porPersona * total)
+  }, 0)
+
+  return (
+    <div className="economia-section">
+      <h3 className="economia-title">Economía por actuación</h3>
+
+      <div className="economia-totals">
+        <div className="economia-total-item">
+          <span className="economia-total-value">{totalIngresos}€</span>
+          <span className="economia-total-label">Total ingresos</span>
+        </div>
+        <div className="economia-total-item">
+          <span className="economia-total-value economia-bote">{totalBote}€</span>
+          <span className="economia-total-label">Bote acumulado</span>
+        </div>
+      </div>
+
+      <div className="economia-list">
+        {actuaciones.map((act) => {
+          const asistentes = Object.values(act.asistencia || {}).filter((v) => v === 'voy').length
+          const refuerzos = act.refuerzos || 0
+          const totalPersonas = asistentes + refuerzos
+          const precio = act.precio || 0
+          const porPersona = totalPersonas > 0 ? roundDown5(precio / totalPersonas) : 0
+          const bote = precio > 0 ? precio - porPersona * totalPersonas : 0
+
+          return (
+            <div key={act.id} className="economia-card">
+              <div className="economia-card-header">
+                <div>
+                  <div className="economia-card-name">{act.nombre}</div>
+                  <div className="economia-card-date">{formatDateShort(act.fecha)} · {act.ubicacion}</div>
+                </div>
+                <button className="economia-edit-btn" onClick={() => openEdit(act)}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div className="economia-card-stats">
+                <div className="economia-stat">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  <span>{asistentes} miembros{refuerzos > 0 ? ` + ${refuerzos} refuerzos` : ''}</span>
+                </div>
+                {precio > 0 ? (
+                  <>
+                    <div className="economia-stat">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                      </svg>
+                      <span>{precio}€ total</span>
+                    </div>
+                    <div className="economia-resultado">
+                      <span className="economia-por-persona">{porPersona}€/persona</span>
+                      <span className="economia-bote-badge">Bote: {bote}€</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="economia-sin-precio">Sin precio asignado</div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {editingId && (
+        <Modal onClose={() => setEditingId(null)}>
+          <h3 style={{ marginBottom: 16 }}>Editar datos económicos</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label className="form-label">Precio del acto (€)</label>
+              <input
+                type="number"
+                placeholder="0"
+                value={editPrecio}
+                onChange={(e) => setEditPrecio(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="form-label">Refuerzos (personas extra)</label>
+              <input
+                type="number"
+                placeholder="0"
+                value={editRefuerzos}
+                onChange={(e) => setEditRefuerzos(e.target.value)}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <Button onClick={handleSave}>Guardar</Button>
+            <Button variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  )
+}
+
 function DireccionSection({ users, events }) {
   const now = new Date()
   const pastEvents = events.filter((e) => {
@@ -74,11 +214,15 @@ function DireccionSection({ users, events }) {
     return d < now
   })
   const pastActuaciones = pastEvents.filter((e) => e.tipo === 'actuacion')
+    .sort((a, b) => {
+      const da = a.fecha?.toDate ? a.fecha.toDate() : new Date(a.fecha)
+      const db = b.fecha?.toDate ? b.fecha.toDate() : new Date(b.fecha)
+      return db - da
+    })
   const pastEnsayos = pastEvents.filter((e) => e.tipo === 'ensayo')
 
   const approvedUsers = users.filter((u) => u.estado === 'aprobado')
 
-  // Build stats for each user
   const memberStats = approvedUsers.map((u) => {
     const actAsistidas = pastActuaciones.filter((e) => e.asistencia?.[u.id] === 'voy').length
     const ensAsistidos = pastEnsayos.filter((e) => e.asistencia?.[u.id] === 'voy').length
@@ -148,6 +292,8 @@ function DireccionSection({ users, events }) {
           </div>
         ))}
       </div>
+
+      <EconomiaSection actuaciones={pastActuaciones} />
     </div>
   )
 }
