@@ -1,29 +1,70 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { useFolders } from '../hooks/useScores'
-import Card from '../components/ui/Card'
-import FAB from '../components/ui/FAB'
-import Modal from '../components/ui/Modal'
-import EmptyState from '../components/ui/EmptyState'
-import FolderForm from './FolderForm'
+import { useState, useEffect } from 'react'
+import { listFolder, isFolder } from '../services/drive'
 import './partituras.css'
 
-export default function Partituras() {
-  const [search, setSearch] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const { user, canManageScores } = useAuth()
-  const { folders, loading, addFolder } = useFolders()
-  const navigate = useNavigate()
+const ROOT_FOLDER_ID = import.meta.env.VITE_DRIVE_ROOT_FOLDER_ID
 
-  const filtered = folders.filter((f) =>
-    f.nombre.toLowerCase().includes(search.toLowerCase())
+function FolderIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    </svg>
   )
+}
 
-  async function handleAddFolder(nombre) {
-    await addFolder(nombre, folders.length + 1, user.uid)
-    setShowForm(false)
+function FileIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+    </svg>
+  )
+}
+
+function ChevronRight() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6"/>
+    </svg>
+  )
+}
+
+export default function Partituras() {
+  const [files, setFiles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [breadcrumbs, setBreadcrumbs] = useState([
+    { id: ROOT_FOLDER_ID, name: 'Partituras' }
+  ])
+
+  const currentFolderId = breadcrumbs[breadcrumbs.length - 1].id
+
+  useEffect(() => {
+    setLoading(true)
+    setError('')
+    listFolder(currentFolderId)
+      .then(setFiles)
+      .catch(() => setError('Error al cargar las partituras'))
+      .finally(() => setLoading(false))
+  }, [currentFolderId])
+
+  function openFolder(file) {
+    setBreadcrumbs((prev) => [...prev, { id: file.id, name: file.name }])
   }
+
+  function goToBreadcrumb(index) {
+    setBreadcrumbs((prev) => prev.slice(0, index + 1))
+  }
+
+  function handleFileClick(file) {
+    if (isFolder(file)) {
+      openFolder(file)
+    } else {
+      window.open(file.webViewLink, '_blank')
+    }
+  }
+
+  const folders = files.filter(isFolder)
+  const documents = files.filter((f) => !isFolder(f))
 
   return (
     <div>
@@ -32,45 +73,63 @@ export default function Partituras() {
         <h1 className="page-header-title">Partituras</h1>
       </div>
 
-      <div className="partituras-search">
-        <input
-          placeholder="Buscar carpeta..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="breadcrumbs">
+        {breadcrumbs.map((crumb, i) => (
+          <span key={crumb.id} className="breadcrumb-item">
+            {i > 0 && <span className="breadcrumb-sep">/</span>}
+            <button
+              className={`breadcrumb-btn${i === breadcrumbs.length - 1 ? ' breadcrumb-active' : ''}`}
+              onClick={() => goToBreadcrumb(i)}
+            >
+              {crumb.name}
+            </button>
+          </span>
+        ))}
       </div>
 
       {loading ? (
-        <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)' }}>Cargando...</p>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon="🎵"
-          title="No hay partituras"
-          message="Todavía no se han creado carpetas de partituras."
-        />
+        <div className="partituras-loading">
+          <div className="partituras-spinner" />
+          <p>Cargando...</p>
+        </div>
+      ) : error ? (
+        <div className="partituras-error">
+          <p>{error}</p>
+          <button className="partituras-retry" onClick={() => goToBreadcrumb(0)}>Reintentar</button>
+        </div>
+      ) : files.length === 0 ? (
+        <div className="partituras-empty">
+          <FileIcon />
+          <p>Esta carpeta está vacía</p>
+        </div>
       ) : (
         <div className="folder-grid">
-          {filtered.map((folder) => (
-            <Card
-              key={folder.id}
-              className="folder-card"
-              onClick={() => navigate(`/partituras/${folder.id}`)}
-            >
-              <span className="folder-icon">📁</span>
-              <div className="folder-info">
-                <div className="folder-name">{folder.nombre}</div>
+          {folders.map((file) => (
+            <button key={file.id} className="folder-card" onClick={() => handleFileClick(file)}>
+              <div className="folder-icon-wrapper">
+                <FolderIcon />
               </div>
-            </Card>
+              <div className="folder-info">
+                <div className="folder-name">{file.name}</div>
+                <div className="folder-hint">Carpeta</div>
+              </div>
+              <ChevronRight />
+            </button>
+          ))}
+
+          {documents.map((file) => (
+            <button key={file.id} className="folder-card" onClick={() => handleFileClick(file)}>
+              <div className="folder-icon-wrapper folder-icon-file">
+                <FileIcon />
+              </div>
+              <div className="folder-info">
+                <div className="folder-name">{file.name}</div>
+                <div className="folder-hint">Abrir partitura</div>
+              </div>
+              <ChevronRight />
+            </button>
           ))}
         </div>
-      )}
-
-      {canManageScores && <FAB onClick={() => setShowForm(true)} />}
-
-      {showForm && (
-        <Modal onClose={() => setShowForm(false)}>
-          <FolderForm onSubmit={handleAddFolder} onClose={() => setShowForm(false)} />
-        </Modal>
       )}
     </div>
   )
