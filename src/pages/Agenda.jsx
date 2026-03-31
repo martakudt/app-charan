@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useEvents } from '../hooks/useEvents'
 import Card from '../components/ui/Card'
@@ -161,12 +161,17 @@ function Calendar({ events, selectedDate, onSelectDate }) {
 }
 
 export default function Agenda() {
-  const [tab, setTab] = useState('proximos')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = searchParams.get('tab') || 'proximos'
   const [filtro, setFiltro] = useState('todos')
   const [selectedDate, setSelectedDate] = useState(null)
   const { canManageEvents } = useAuth()
   const { events, loading } = useEvents()
   const navigate = useNavigate()
+
+  function setTab(newTab) {
+    setSearchParams({ tab: newTab })
+  }
 
   const now = new Date()
   const filtered = events

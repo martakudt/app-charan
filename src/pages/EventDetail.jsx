@@ -63,7 +63,7 @@ export default function EventDetail() {
 
   return (
     <div className="event-detail">
-      <button className="event-detail-back" onClick={() => navigate('/agenda')}>
+      <button className="event-detail-back" onClick={() => navigate(-1)}>
         ← Agenda
       </button>
 
