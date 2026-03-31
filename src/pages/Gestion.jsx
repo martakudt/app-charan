@@ -31,21 +31,56 @@ function formatDateShort(timestamp) {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function EconomiaSection({ actuaciones }) {
+function getRefuerzosCount(act) {
+  if (Array.isArray(act.refuerzos)) return act.refuerzos.length
+  return act.refuerzos || 0
+}
+
+function getRefuerzosNames(act) {
+  if (Array.isArray(act.refuerzos)) return act.refuerzos
+  return []
+}
+
+function EconomiaSection({ actuaciones, users }) {
   const [editingId, setEditingId] = useState(null)
   const [editPrecio, setEditPrecio] = useState('')
-  const [editRefuerzos, setEditRefuerzos] = useState('')
+  const [editRefuerzosInput, setEditRefuerzosInput] = useState('')
+  const [editRefuerzosList, setEditRefuerzosList] = useState([])
+  const [expandedId, setExpandedId] = useState(null)
+
+  function getUserName(uid) {
+    const u = users.find((u) => u.id === uid)
+    return u ? u.nombre : 'Desconocido'
+  }
+
+  async function togglePagado(actId, personKey, currentPagados) {
+    const pagados = { ...currentPagados }
+    pagados[personKey] = !pagados[personKey]
+    await updateEvent(actId, { pagados })
+  }
 
   function openEdit(act) {
     setEditingId(act.id)
     setEditPrecio(act.precio ?? '')
-    setEditRefuerzos(act.refuerzos ?? 0)
+    setEditRefuerzosList(getRefuerzosNames(act))
+    setEditRefuerzosInput('')
+  }
+
+  function addRefuerzo() {
+    const name = editRefuerzosInput.trim()
+    if (!name) return
+    setEditRefuerzosList((prev) => [...prev, name])
+    setEditRefuerzosInput('')
+  }
+
+  function removeRefuerzo(index) {
+    setEditRefuerzosList((prev) => prev.filter((_, i) => i !== index))
   }
 
   async function handleSave() {
     await updateEvent(editingId, {
       precio: Number(editPrecio) || 0,
-      refuerzos: Number(editRefuerzos) || 0,
+      refuerzos: editRefuerzosList,
     })
     setEditingId(null)
   }
@@ -54,7 +89,7 @@ function EconomiaSection({ actuaciones }) {
   const totalBote = actuaciones.reduce((sum, a) => {
     if (!a.precio) return sum
     const asistentes = Object.values(a.asistencia || {}).filter((v) => v === 'voy').length
-    const total = asistentes + (a.refuerzos || 0)
+    const total = asistentes + getRefuerzosCount(a)
     if (total === 0) return sum
     const porPersona = roundDown5(a.precio / total)
     return sum + (a.precio - porPersona * total)
@@ -78,11 +113,21 @@ function EconomiaSection({ actuaciones }) {
       <div className="economia-list">
         {actuaciones.map((act) => {
           const asistentes = Object.values(act.asistencia || {}).filter((v) => v === 'voy').length
-          const refuerzos = act.refuerzos || 0
+          const refuerzos = getRefuerzosCount(act)
+          const refuerzosNames = getRefuerzosNames(act)
           const totalPersonas = asistentes + refuerzos
           const precio = act.precio || 0
           const porPersona = totalPersonas > 0 ? roundDown5(precio / totalPersonas) : 0
           const bote = precio > 0 ? precio - porPersona * totalPersonas : 0
+
+          const pagados = act.pagados || {}
+          const asistentesUids = Object.entries(act.asistencia || {})
+            .filter(([, v]) => v === 'voy')
+            .map(([uid]) => uid)
+          const pagadosCount = asistentesUids.filter((uid) => pagados[uid]).length
+            + refuerzosNames.filter((name) => pagados[`ref_${name}`]).length
+          const totalPagables = asistentesUids.length + refuerzosNames.length
+          const isExpanded = expandedId === act.id
 
           return (
             <div key={act.id} className="economia-card">
@@ -103,7 +148,9 @@ function EconomiaSection({ actuaciones }) {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                   </svg>
-                  <span>{asistentes} miembros{refuerzos > 0 ? ` + ${refuerzos} refuerzos` : ''}</span>
+                  <span>{asistentes} miembros{refuerzos > 0 ? ` + ${refuerzos} refuerzos` : ''}
+                    {refuerzosNames.length > 0 && ` (${refuerzosNames.join(', ')})`}
+                  </span>
                 </div>
                 {precio > 0 ? (
                   <>
@@ -122,6 +169,48 @@ function EconomiaSection({ actuaciones }) {
                   <div className="economia-sin-precio">Sin precio asignado</div>
                 )}
               </div>
+
+              {precio > 0 && (
+                <div className="pagos-section">
+                  <button
+                    className="pagos-toggle"
+                    onClick={() => setExpandedId(isExpanded ? null : act.id)}
+                  >
+                    <span>Pagos ({pagadosCount}/{totalPagables})</span>
+                    <span className={`pagos-arrow ${isExpanded ? 'pagos-arrow-open' : ''}`}>›</span>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="pagos-list">
+                      {asistentesUids.map((uid) => {
+                        const isPagado = pagados[uid]
+                        return (
+                          <div key={uid} className="pagos-row" onClick={() => togglePagado(act.id, uid, pagados)}>
+                            <div className={`pagos-check ${isPagado ? 'pagos-check-done' : ''}`}>
+                              {isPagado && '✓'}
+                            </div>
+                            <span className="pagos-name">{getUserName(uid)}</span>
+                            <span className="pagos-amount">{porPersona}€</span>
+                          </div>
+                        )
+                      })}
+                      {refuerzosNames.map((name) => {
+                        const key = `ref_${name}`
+                        const isPagado = pagados[key]
+                        return (
+                          <div key={key} className="pagos-row" onClick={() => togglePagado(act.id, key, pagados)}>
+                            <div className={`pagos-check ${isPagado ? 'pagos-check-done' : ''}`}>
+                              {isPagado && '✓'}
+                            </div>
+                            <span className="pagos-name">{name} <span className="pagos-refuerzo-tag">Refuerzo</span></span>
+                            <span className="pagos-amount">{porPersona}€</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}
@@ -142,13 +231,26 @@ function EconomiaSection({ actuaciones }) {
               />
             </div>
             <div>
-              <label className="form-label">Refuerzos (personas extra)</label>
-              <input
-                type="number"
-                placeholder="0"
-                value={editRefuerzos}
-                onChange={(e) => setEditRefuerzos(e.target.value)}
-              />
+              <label className="form-label">Refuerzos</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  placeholder="Nombre del refuerzo"
+                  value={editRefuerzosInput}
+                  onChange={(e) => setEditRefuerzosInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addRefuerzo() } }}
+                />
+                <Button variant="secondary" size="sm" onClick={addRefuerzo} style={{ whiteSpace: 'nowrap', width: 'auto' }}>+ Añadir</Button>
+              </div>
+              {editRefuerzosList.length > 0 && (
+                <div className="refuerzos-list">
+                  {editRefuerzosList.map((name, i) => (
+                    <div key={i} className="refuerzo-tag">
+                      <span>{name}</span>
+                      <button className="refuerzo-remove" onClick={() => removeRefuerzo(i)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
@@ -255,7 +357,7 @@ export default function Gestion() {
         ))}
       </div>
 
-      <EconomiaSection actuaciones={pastActuaciones} />
+      <EconomiaSection actuaciones={pastActuaciones} users={approvedUsers} />
     </div>
   )
 }

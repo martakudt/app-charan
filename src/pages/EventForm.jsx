@@ -19,6 +19,7 @@ export default function EventForm() {
   const [hora, setHora] = useState('')
   const [ubicacion, setUbicacion] = useState('')
   const [descripcion, setDescripcion] = useState('')
+  const [duracion, setDuracion] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -28,6 +29,7 @@ export default function EventForm() {
       setTipo(existing.tipo || 'actuacion')
       setUbicacion(existing.ubicacion || '')
       setDescripcion(existing.descripcion || '')
+      setDuracion(existing.duracion || '')
       if (existing.fecha) {
         const d = existing.fecha.toDate ? existing.fecha.toDate() : new Date(existing.fecha)
         setFecha(d.toISOString().split('T')[0])
@@ -54,6 +56,7 @@ export default function EventForm() {
         fecha: fechaDate,
         ubicacion: ubicacion.trim(),
         descripcion: descripcion.trim(),
+        duracion: duracion.trim(),
         creadoPor: user.uid,
       }
 
@@ -112,6 +115,11 @@ export default function EventForm() {
         <div className="form-group">
           <label className="form-label">Ubicación</label>
           <input value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} placeholder="Plaza Mayor, Landete" />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Duración (opcional)</label>
+          <input value={duracion} onChange={(e) => setDuracion(e.target.value)} placeholder="Ej: 4 horas, mañana y tarde..." />
         </div>
 
         <div className="form-group">

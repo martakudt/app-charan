@@ -94,7 +94,7 @@ function MisActuaciones({ events, uid }) {
   const totalGanado = misActuaciones.reduce((sum, act) => {
     if (!act.precio) return sum
     const asistentes = Object.values(act.asistencia || {}).filter((v) => v === 'voy').length
-    const total = asistentes + (act.refuerzos || 0)
+    const total = asistentes + (Array.isArray(act.refuerzos) ? act.refuerzos.length : (act.refuerzos || 0))
     if (total === 0) return sum
     return sum + roundDown5(act.precio / total)
   }, 0)
@@ -111,7 +111,7 @@ function MisActuaciones({ events, uid }) {
       <div className="mis-actuaciones-list">
         {misActuaciones.map((act) => {
           const asistentes = Object.values(act.asistencia || {}).filter((v) => v === 'voy').length
-          const total = asistentes + (act.refuerzos || 0)
+          const total = asistentes + (Array.isArray(act.refuerzos) ? act.refuerzos.length : (act.refuerzos || 0))
           const precio = act.precio || 0
           const porPersona = total > 0 && precio > 0 ? roundDown5(precio / total) : 0
 

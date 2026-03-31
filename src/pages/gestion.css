@@ -12,3 +12,126 @@
   letter-spacing: 0.5px;
   margin-bottom: 12px;
 }
+
+.refuerzos-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.refuerzo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--color-primary-light);
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.refuerzo-remove {
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.refuerzo-remove:hover {
+  color: var(--color-danger);
+}
+
+/* Pagos */
+.pagos-section {
+  margin-top: 12px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
+}
+
+.pagos-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  padding: 4px 0;
+}
+
+.pagos-arrow {
+  font-size: 1.1rem;
+  transition: transform 0.2s;
+}
+
+.pagos-arrow-open {
+  transform: rotate(90deg);
+}
+
+.pagos-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pagos-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pagos-row:hover {
+  background: var(--color-background);
+}
+
+.pagos-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.pagos-check-done {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.pagos-name {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.pagos-refuerzo-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-border);
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: 4px;
+}
+
+.pagos-amount {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
