@@ -4,6 +4,30 @@
   margin-bottom: 20px;
 }
 
+.gestion-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.gestion-filter-select {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+  appearance: auto;
+}
+
+.gestion-filter-select:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
 .gestion-section-title {
   font-size: 0.85rem;
   font-weight: 600;
@@ -42,6 +66,105 @@
 
 .refuerzo-remove:hover {
   color: var(--color-danger);
+}
+
+/* Chart */
+.chart-section {
+  margin-bottom: 24px;
+}
+
+.chart-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chart-total-item {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.chart-total-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.chart-total-label {
+  font-size: 0.65rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.chart-card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 12px 12px;
+  overflow-x: auto;
+}
+
+.chart-bars {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  min-height: 200px;
+  min-width: fit-content;
+}
+
+.chart-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 44px;
+}
+
+.chart-bar-value {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.chart-bar-track {
+  width: 28px;
+  height: 160px;
+  background: var(--color-background);
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.chart-bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #E91E7B, #D11A6E);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.6s ease;
+  min-height: 4px;
+}
+
+.chart-bar-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-top: 8px;
+}
+
+.chart-bar-count {
+  font-size: 0.6rem;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
 }
 
 /* Pagos */

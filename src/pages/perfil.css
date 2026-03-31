@@ -103,6 +103,31 @@
   letter-spacing: 0.3px;
 }
 
+/* Year filter */
+.perfil-year-filter {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.perfil-year-btn {
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 2px solid var(--color-border);
+  transition: all 0.2s;
+}
+
+.perfil-year-active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
 /* Mis actuaciones */
 .mis-actuaciones {
   margin-bottom: 24px;

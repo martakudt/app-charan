@@ -44,6 +44,7 @@ function getRefuerzosNames(act) {
 function EconomiaSection({ actuaciones, users }) {
   const [editingId, setEditingId] = useState(null)
   const [editPrecio, setEditPrecio] = useState('')
+  const [editPrecioTotal, setEditPrecioTotal] = useState('')
   const [editRefuerzosInput, setEditRefuerzosInput] = useState('')
   const [editRefuerzosList, setEditRefuerzosList] = useState([])
   const [expandedId, setExpandedId] = useState(null)
@@ -62,6 +63,7 @@ function EconomiaSection({ actuaciones, users }) {
   function openEdit(act) {
     setEditingId(act.id)
     setEditPrecio(act.precio ?? '')
+    setEditPrecioTotal(act.precioTotal ?? '')
     setEditRefuerzosList(getRefuerzosNames(act))
     setEditRefuerzosInput('')
   }
@@ -80,6 +82,7 @@ function EconomiaSection({ actuaciones, users }) {
   async function handleSave() {
     await updateEvent(editingId, {
       precio: Number(editPrecio) || 0,
+      precioTotal: Number(editPrecioTotal) || Number(editPrecio) || 0,
       refuerzos: editRefuerzosList,
     })
     setEditingId(null)
@@ -221,13 +224,22 @@ function EconomiaSection({ actuaciones, users }) {
           <h3 style={{ marginBottom: 16 }}>Editar datos económicos</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
-              <label className="form-label">Precio del acto (€)</label>
+              <label className="form-label">Total cobrado (€)</label>
+              <input
+                type="number"
+                placeholder="0"
+                value={editPrecioTotal}
+                onChange={(e) => setEditPrecioTotal(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="form-label">A repartir (€)</label>
               <input
                 type="number"
                 placeholder="0"
                 value={editPrecio}
                 onChange={(e) => setEditPrecio(e.target.value)}
-                autoFocus
               />
             </div>
             <div>
@@ -263,22 +275,115 @@ function EconomiaSection({ actuaciones, users }) {
   )
 }
 
+const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+
+function IngresosChart({ actuaciones }) {
+  // Group by month
+  const monthlyData = {}
+  let totalIngresos = 0
+  let totalRepartido = 0
+  let totalActos = 0
+
+  actuaciones.forEach((act) => {
+    if (!act.precio) return
+    const d = act.fecha?.toDate ? act.fecha.toDate() : new Date(act.fecha)
+    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}`
+    if (!monthlyData[key]) {
+      monthlyData[key] = { month: d.getMonth(), year: d.getFullYear(), ingresos: 0, actos: 0 }
+    }
+    const cobrado = act.precioTotal || act.precio
+    monthlyData[key].ingresos += cobrado
+    monthlyData[key].actos += 1
+    totalIngresos += cobrado
+    totalRepartido += act.precio
+    totalActos += 1
+  })
+
+  const months = Object.values(monthlyData).sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year
+    return a.month - b.month
+  })
+
+  const maxIngresos = Math.max(...months.map((m) => m.ingresos), 1)
+
+  if (months.length === 0) return null
+
+  return (
+    <div className="chart-section">
+      <h3 className="gestion-section-title">Ingresos por mes</h3>
+
+      <div className="chart-totals">
+        <div className="chart-total-item">
+          <span className="chart-total-value">{totalIngresos.toLocaleString('es-ES')}€</span>
+          <span className="chart-total-label">Total cobrado</span>
+        </div>
+        <div className="chart-total-item">
+          <span className="chart-total-value">{totalRepartido.toLocaleString('es-ES')}€</span>
+          <span className="chart-total-label">Total repartido</span>
+        </div>
+        <div className="chart-total-item">
+          <span className="chart-total-value">{totalActos}</span>
+          <span className="chart-total-label">Actuaciones</span>
+        </div>
+      </div>
+
+      <div className="chart-card">
+        <div className="chart-bars">
+          {months.map((m) => {
+            const pct = (m.ingresos / maxIngresos) * 100
+            return (
+              <div key={`${m.year}-${m.month}`} className="chart-bar-col">
+                <div className="chart-bar-value">{m.ingresos}€</div>
+                <div className="chart-bar-track">
+                  <div
+                    className="chart-bar-fill"
+                    style={{ height: `${pct}%` }}
+                  />
+                </div>
+                <div className="chart-bar-label">{MONTH_NAMES[m.month]}</div>
+                <div className="chart-bar-count">{m.actos} actos</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Gestion() {
   const { users } = useUsers()
   const { events } = useEvents()
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState('todos')
 
   const now = new Date()
   const pastEvents = events.filter((e) => {
     const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
     return d < now
   })
-  const pastActuaciones = pastEvents.filter((e) => e.tipo === 'actuacion')
+
+  // Get available years
+  const availableYears = [...new Set(pastEvents.map((e) => {
+    const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
+    return d.getFullYear()
+  }))].sort((a, b) => b - a)
+
+  // Filter by year and month
+  const filteredEvents = pastEvents.filter((e) => {
+    const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
+    if (d.getFullYear() !== selectedYear) return false
+    if (selectedMonth !== 'todos' && d.getMonth() !== Number(selectedMonth)) return false
+    return true
+  })
+
+  const pastActuaciones = filteredEvents.filter((e) => e.tipo === 'actuacion')
     .sort((a, b) => {
       const da = a.fecha?.toDate ? a.fecha.toDate() : new Date(a.fecha)
       const db = b.fecha?.toDate ? b.fecha.toDate() : new Date(b.fecha)
       return db - da
     })
-  const pastEnsayos = pastEvents.filter((e) => e.tipo === 'ensayo')
+  const pastEnsayos = filteredEvents.filter((e) => e.tipo === 'ensayo')
 
   const approvedUsers = users.filter((u) => u.estado === 'aprobado')
 
@@ -306,7 +411,29 @@ export default function Gestion() {
         <h1 className="page-header-title">Gestión</h1>
       </div>
 
-      <p className="gestion-subtitle">Panel de dirección de La Mandanga</p>
+      <div className="gestion-filters">
+        <select
+          className="gestion-filter-select"
+          value={selectedYear}
+          onChange={(e) => { setSelectedYear(Number(e.target.value)); setSelectedMonth('todos') }}
+        >
+          {availableYears.map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+        <select
+          className="gestion-filter-select"
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+        >
+          <option value="todos">Todos los meses</option>
+          {MONTH_NAMES.map((m, i) => (
+            <option key={i} value={i}>{m}</option>
+          ))}
+        </select>
+      </div>
+
+      <IngresosChart actuaciones={pastActuaciones} />
 
       <div className="direccion-summary">
         <div className="direccion-summary-item">

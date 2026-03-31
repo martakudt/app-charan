@@ -69,12 +69,25 @@ function roundDown5(n) {
   return Math.floor(n / 5) * 5
 }
 
-function MisActuaciones({ events, uid }) {
+function userAttended(event, uid, nombre) {
+  const a = event.asistencia || {}
+  if (a[uid] === 'voy') return true
+  // Check manual keys from 2025 import by matching name
+  if (nombre) {
+    const nameLower = nombre.trim().split(/\s+/)[0].toLowerCase()
+    return Object.entries(a).some(([key, val]) =>
+      val === 'voy' && key.startsWith('miembro_') && key.replace('miembro_', '') === nameLower
+    )
+  }
+  return false
+}
+
+function MisActuaciones({ events, uid, year, nombre }) {
   const now = new Date()
   const misActuaciones = events
     .filter((e) => {
       const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
-      return d < now && e.tipo === 'actuacion' && e.asistencia?.[uid] === 'voy'
+      return d < now && d.getFullYear() === year && e.tipo === 'actuacion' && userAttended(e, uid, nombre)
     })
     .sort((a, b) => {
       const da = a.fecha?.toDate ? a.fecha.toDate() : new Date(a.fecha)
@@ -139,6 +152,7 @@ export default function Perfil() {
   const [showEdit, setShowEdit] = useState(false)
   const [editNombre, setEditNombre] = useState('')
   const [editInstrumento, setEditInstrumento] = useState('')
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
 
   const INSTRUMENTOS = [
     'Clarinete', 'Saxofón', 'Trompeta', 'Trombón', 'Tuba',
@@ -146,15 +160,26 @@ export default function Perfil() {
   ]
 
   const now = new Date()
-  const pastEvents = events.filter((e) => {
+  const allPastEvents = events.filter((e) => {
     const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
     return d < now
+  })
+
+  const availableYears = [...new Set(allPastEvents.map((e) => {
+    const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
+    return d.getFullYear()
+  }))].sort((a, b) => b - a)
+
+  const pastEvents = allPastEvents.filter((e) => {
+    const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
+    return d.getFullYear() === selectedYear
   })
   const pastActuaciones = pastEvents.filter((e) => e.tipo === 'actuacion')
   const pastEnsayos = pastEvents.filter((e) => e.tipo === 'ensayo')
 
-  const actuacionesAsistidas = pastActuaciones.filter((e) => e.asistencia?.[user?.uid] === 'voy').length
-  const ensayosAsistidos = pastEnsayos.filter((e) => e.asistencia?.[user?.uid] === 'voy').length
+  const nombre = userData?.nombre
+  const actuacionesAsistidas = pastActuaciones.filter((e) => userAttended(e, user?.uid, nombre)).length
+  const ensayosAsistidos = pastEnsayos.filter((e) => userAttended(e, user?.uid, nombre)).length
 
   function openEdit() {
     setEditNombre(userData?.nombre || '')
@@ -191,6 +216,18 @@ export default function Perfil() {
         </p>
       </div>
 
+      <div className="perfil-year-filter">
+        {availableYears.map((y) => (
+          <button
+            key={y}
+            className={`perfil-year-btn${selectedYear === y ? ' perfil-year-active' : ''}`}
+            onClick={() => setSelectedYear(y)}
+          >
+            {y}
+          </button>
+        ))}
+      </div>
+
       <div className="stats-section">
         <h3 className="stats-title">Mi asistencia</h3>
         <div className="stats-grid">
@@ -209,7 +246,7 @@ export default function Perfil() {
         </div>
       </div>
 
-      <MisActuaciones events={events} uid={user?.uid} />
+      <MisActuaciones events={events} uid={user?.uid} year={selectedYear} nombre={nombre} />
 
       <div className="perfil-actions">
         <Button variant="secondary" onClick={openEdit}>Editar perfil</Button>
