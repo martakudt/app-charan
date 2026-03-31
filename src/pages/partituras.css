@@ -1,0 +1,77 @@
+.partituras-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.partituras-search {
+  margin-bottom: 16px;
+}
+
+.folder-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.folder-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.folder-card:active { transform: scale(0.98); }
+
+.folder-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.folder-info {
+  flex: 1;
+}
+
+.folder-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.folder-count {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.score-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.score-item:active { transform: scale(0.98); }
+
+.score-icon {
+  font-size: 24px;
+  color: var(--color-danger);
+  flex-shrink: 0;
+}
+
+.score-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.score-delete {
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 18px;
+  padding: 4px 8px;
+}
