@@ -35,6 +35,7 @@ export function AuthProvider({ children }) {
     isAdmin: userData?.rol === 'admin',
     canManageScores: userData?.rol === 'admin' || userData?.permisos?.partituras === true,
     canManageEvents: userData?.rol === 'admin' || userData?.permisos?.calendario === true,
+    canAccessDireccion: userData?.rol === 'admin' || userData?.permisos?.direccion === true,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

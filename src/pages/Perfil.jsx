@@ -59,8 +59,101 @@ function StatRing({ value, max, label, color }) {
   )
 }
 
+function MiniAvatar({ name }) {
+  return (
+    <div className="mini-avatar">
+      {getInitials(name)}
+    </div>
+  )
+}
+
+function DireccionSection({ users, events }) {
+  const now = new Date()
+  const pastEvents = events.filter((e) => {
+    const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
+    return d < now
+  })
+  const pastActuaciones = pastEvents.filter((e) => e.tipo === 'actuacion')
+  const pastEnsayos = pastEvents.filter((e) => e.tipo === 'ensayo')
+
+  const approvedUsers = users.filter((u) => u.estado === 'aprobado')
+
+  // Build stats for each user
+  const memberStats = approvedUsers.map((u) => {
+    const actAsistidas = pastActuaciones.filter((e) => e.asistencia?.[u.id] === 'voy').length
+    const ensAsistidos = pastEnsayos.filter((e) => e.asistencia?.[u.id] === 'voy').length
+    const totalPast = pastEvents.length
+    const totalAsistidos = pastEvents.filter((e) => e.asistencia?.[u.id] === 'voy').length
+    const pctTotal = totalPast > 0 ? Math.round((totalAsistidos / totalPast) * 100) : 0
+
+    return {
+      ...u,
+      actAsistidas,
+      actTotal: pastActuaciones.length,
+      ensAsistidos,
+      ensTotal: pastEnsayos.length,
+      pctTotal,
+    }
+  }).sort((a, b) => b.pctTotal - a.pctTotal)
+
+  return (
+    <div className="direccion-section">
+      <h2>Dirección</h2>
+      <p className="direccion-subtitle">Asistencia de todos los miembros</p>
+
+      <div className="direccion-summary">
+        <div className="direccion-summary-item">
+          <span className="direccion-summary-value">{pastActuaciones.length}</span>
+          <span className="direccion-summary-label">Actuaciones</span>
+        </div>
+        <div className="direccion-summary-item">
+          <span className="direccion-summary-value">{pastEnsayos.length}</span>
+          <span className="direccion-summary-label">Ensayos</span>
+        </div>
+        <div className="direccion-summary-item">
+          <span className="direccion-summary-value">{approvedUsers.length}</span>
+          <span className="direccion-summary-label">Miembros</span>
+        </div>
+      </div>
+
+      <div className="direccion-table">
+        <div className="direccion-table-header">
+          <span className="direccion-col-name">Miembro</span>
+          <span className="direccion-col-stat">Act.</span>
+          <span className="direccion-col-stat">Ens.</span>
+          <span className="direccion-col-stat">Total</span>
+        </div>
+        {memberStats.map((m) => (
+          <div key={m.id} className="direccion-table-row">
+            <div className="direccion-col-name">
+              <MiniAvatar name={m.nombre} />
+              <div>
+                <div className="direccion-member-name">{m.nombre}</div>
+                <div className="direccion-member-instrument">{m.instrumento}</div>
+              </div>
+            </div>
+            <span className="direccion-col-stat">
+              <span className="direccion-stat-value">{m.actAsistidas}</span>
+              <span className="direccion-stat-max">/{m.actTotal}</span>
+            </span>
+            <span className="direccion-col-stat">
+              <span className="direccion-stat-value">{m.ensAsistidos}</span>
+              <span className="direccion-stat-max">/{m.ensTotal}</span>
+            </span>
+            <span className="direccion-col-stat">
+              <span className={`direccion-pct ${m.pctTotal >= 75 ? 'pct-high' : m.pctTotal >= 50 ? 'pct-mid' : 'pct-low'}`}>
+                {m.pctTotal}%
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Perfil() {
-  const { user, userData, isAdmin } = useAuth()
+  const { user, userData, isAdmin, canAccessDireccion } = useAuth()
   const { users, loading, approveUser, rejectUser, togglePermission } = useUsers()
   const { events } = useEvents()
   const [showEdit, setShowEdit] = useState(false)
@@ -72,7 +165,6 @@ export default function Perfil() {
     'Bombardino', 'Flauta', 'Percusión', 'Caja', 'Bombo', 'Otro'
   ]
 
-  // Calculate stats from past events
   const now = new Date()
   const pastEvents = events.filter((e) => {
     const d = e.fecha?.toDate ? e.fecha.toDate() : new Date(e.fecha)
@@ -142,6 +234,10 @@ export default function Perfil() {
         <Button variant="ghost" onClick={logout}>Cerrar sesión</Button>
       </div>
 
+      {canAccessDireccion && (
+        <DireccionSection users={users} events={events} />
+      )}
+
       {isAdmin && (
         <div className="admin-section">
           <h2>Administración</h2>
@@ -199,6 +295,13 @@ export default function Perfil() {
                     <div
                       className={`toggle${u.permisos?.calendario ? ' toggle-active' : ''}`}
                       onClick={() => togglePermission(u.id, 'calendario', !u.permisos?.calendario)}
+                    />
+                  </div>
+                  <div className="toggle-row">
+                    <span>Acceso a Dirección</span>
+                    <div
+                      className={`toggle${u.permisos?.direccion ? ' toggle-active' : ''}`}
+                      onClick={() => togglePermission(u.id, 'direccion', !u.permisos?.direccion)}
                     />
                   </div>
                 </Card>
