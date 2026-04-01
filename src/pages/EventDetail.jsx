@@ -107,6 +107,11 @@ export default function EventDetail() {
         <p className="event-detail-description">{event.descripcion}</p>
       )}
 
+      {event.cerrado ? (
+        <div className="vote-section">
+          <div className="event-closed-badge">Evento cerrado</div>
+        </div>
+      ) : (
       <div className="vote-section">
         <h3>Tu respuesta</h3>
         <div className="vote-buttons">
@@ -133,6 +138,7 @@ export default function EventDetail() {
           </button>
         </div>
       </div>
+      )}
 
       <Card className="attendance-card">
         <div className="attendance-header">Asistencia</div>

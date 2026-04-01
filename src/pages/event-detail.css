@@ -2,6 +2,16 @@
   padding-bottom: 24px;
 }
 
+.event-closed-badge {
+  text-align: center;
+  padding: 12px;
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .event-detail-back {
   display: block;
   font-size: 0.9rem;
