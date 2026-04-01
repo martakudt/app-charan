@@ -51,8 +51,29 @@ export default function EventDetail() {
     await voteEvent(id, user.uid, vote)
   }
 
+  function removeTildes(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  }
+
   function getUserInfo(uid) {
-    return users.find((u) => u.id === uid) || { nombre: 'Desconocido', instrumento: '' }
+    // Direct UID match
+    const directMatch = users.find((u) => u.id === uid)
+    if (directMatch) return directMatch
+
+    // Manual key from 2025 import
+    if (uid.startsWith('miembro_')) {
+      const name = uid.replace('miembro_', '')
+      // Match by claveHistorico
+      const byKey = users.find((u) => u.claveHistorico && u.claveHistorico.toLowerCase() === name)
+      if (byKey) return byKey
+      // Match by first name
+      const byName = users.find((u) => u.nombre && removeTildes(u.nombre.trim().split(/\s+/)[0].toLowerCase()) === removeTildes(name))
+      if (byName) return byName
+      // Return capitalized name
+      return { nombre: name.charAt(0).toUpperCase() + name.slice(1), instrumento: '' }
+    }
+
+    return { nombre: 'Desconocido', instrumento: '' }
   }
 
   const attendanceGroups = [
