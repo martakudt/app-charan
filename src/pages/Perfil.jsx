@@ -82,7 +82,7 @@ function userAttended(event, uid, nombre, claveHistorico) {
   if (a[uid] === 'voy') return true
   if (claveHistorico) {
     const key = 'miembro_' + claveHistorico.toLowerCase()
-    if (a[key] === 'voy') return true
+    return a[key] === 'voy'
   }
   if (nombre) {
     const nameLower = removeTildes(nombre.trim().split(/\s+/)[0].toLowerCase())

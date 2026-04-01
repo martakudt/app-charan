@@ -45,7 +45,7 @@ function userAttended(event, uid, nombre, claveHistorico) {
   // Check by claveHistorico first (manual link set by admin)
   if (claveHistorico) {
     const key = 'miembro_' + claveHistorico.toLowerCase()
-    if (a[key] === 'voy') return true
+    return a[key] === 'voy'
   }
   // Fallback: match by first name without tildes
   if (nombre) {
