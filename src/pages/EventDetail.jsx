@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useEvents } from '../hooks/useEvents'
-import { getUsers } from '../services/firestore'
+import { getUsers, updateEvent } from '../services/firestore'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import './event-detail.css'
@@ -36,12 +36,13 @@ export default function EventDetail() {
   const [users, setUsers] = useState([])
 
   const event = events.find((e) => e.id === id)
+  const [usersLoaded, setUsersLoaded] = useState(false)
 
   useEffect(() => {
-    getUsers().then(setUsers)
+    getUsers().then((data) => { setUsers(data); setUsersLoaded(true) })
   }, [])
 
-  if (!event) {
+  if (!event || !usersLoaded) {
     return <p style={{ textAlign: 'center', padding: 40, color: 'var(--color-text-secondary)' }}>Cargando evento...</p>
   }
 
@@ -195,10 +196,17 @@ export default function EventDetail() {
         })}
       </Card>
 
-      {canManageEvents && (
-        <div style={{ marginTop: 24, display: 'flex', gap: 8 }}>
+      {canManageEvents && !event.cerrado && (
+        <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <Button variant="secondary" onClick={() => navigate(`/agenda/${id}/editar`)}>
             Editar
+          </Button>
+          <Button variant="ghost" onClick={async () => {
+            if (window.confirm('¿Cerrar este evento? Nadie podrá votar después.')) {
+              await updateEvent(id, { cerrado: true })
+            }
+          }}>
+            Cerrar evento
           </Button>
         </div>
       )}

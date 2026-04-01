@@ -165,21 +165,33 @@ export default function Agenda() {
   const tab = searchParams.get('tab') || 'proximos'
   const [filtro, setFiltro] = useState('todos')
   const [selectedDate, setSelectedDate] = useState(null)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const { canManageEvents } = useAuth()
   const { events, loading } = useEvents()
   const navigate = useNavigate()
 
   function setTab(newTab) {
     setSearchParams({ tab: newTab })
+    setSelectedDate(null)
   }
 
   const now = new Date()
+
+  // Get available years for "Anteriores"
+  const availableYears = [...new Set(events
+    .filter((e) => toDate(e.fecha) < now)
+    .map((e) => toDate(e.fecha).getFullYear())
+  )].sort((a, b) => b - a)
+
   const filtered = events
     .filter((e) => {
       const date = toDate(e.fecha)
       const isFuture = date >= now
       if (tab === 'proximos' && !isFuture) return false
-      if (tab === 'anteriores' && isFuture) return false
+      if (tab === 'anteriores') {
+        if (isFuture) return false
+        if (date.getFullYear() !== selectedYear) return false
+      }
       if (filtro !== 'todos' && e.tipo !== filtro) return false
       if (selectedDate && !sameDay(date, selectedDate)) return false
       return true
@@ -234,6 +246,19 @@ export default function Agenda() {
             />
           ))}
         </div>
+        {tab === 'anteriores' && availableYears.length > 1 && (
+          <div className="agenda-year-filter">
+            {availableYears.map((y) => (
+              <button
+                key={y}
+                className={`agenda-year-btn${selectedYear === y ? ' agenda-year-active' : ''}`}
+                onClick={() => { setSelectedYear(y); setSelectedDate(null) }}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <Calendar

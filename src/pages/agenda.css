@@ -41,6 +41,29 @@
   padding-bottom: 4px;
 }
 
+.agenda-year-filter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.agenda-year-btn {
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 2px solid var(--color-border);
+  transition: all 0.2s;
+}
+
+.agenda-year-active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
 /* Calendar */
 .calendar {
   background: var(--color-surface);
