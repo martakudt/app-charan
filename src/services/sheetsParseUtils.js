@@ -48,11 +48,38 @@ function rowIsCompletelyEmpty(row) {
   return row.every((cell) => cell == null || String(cell).trim() === '')
 }
 
+function isRefuerzoLabel(s) {
+  return /^refuerzo\s*\d*$/i.test(String(s || '').trim())
+}
+
+// Detect member/refuerzo column ranges dynamically from the header row.
+// Members: from MEMBER_COLS_START until the first column labeled "Refuerzo X".
+// Refuerzos: contiguous block of "Refuerzo X" columns.
+// Falls back to legacy hardcoded ranges if no Refuerzo headers are found.
+function detectColumnRanges(headerRow) {
+  let refuerzoStart = -1
+  let refuerzoEnd = -1
+  for (let i = MEMBER_COLS_START; i < headerRow.length; i++) {
+    if (isRefuerzoLabel(headerRow[i])) {
+      if (refuerzoStart === -1) refuerzoStart = i
+      refuerzoEnd = i
+    } else if (refuerzoStart !== -1) {
+      break // end of contiguous refuerzo block
+    }
+  }
+  if (refuerzoStart === -1) {
+    return { memberEnd: MEMBER_COLS_END, refuerzoStart: REFUERZO_COLS_START, refuerzoEnd: REFUERZO_COLS_END }
+  }
+  return { memberEnd: refuerzoStart - 1, refuerzoStart, refuerzoEnd }
+}
+
 export function parseRows({ values }) {
   const rows = values || []
   const headerRow = rows[HEADER_ROW_INDEX] || []
+  const { memberEnd, refuerzoStart, refuerzoEnd } = detectColumnRanges(headerRow)
+
   const headerColumns = {}
-  for (let i = MEMBER_COLS_START; i <= MEMBER_COLS_END; i++) {
+  for (let i = MEMBER_COLS_START; i <= memberEnd; i++) {
     const name = headerRow[i]
     if (name && String(name).trim() !== '') {
       headerColumns[String(name).trim()] = i
@@ -89,7 +116,7 @@ export function parseRows({ values }) {
     }
 
     const refuerzos = []
-    for (let i = REFUERZO_COLS_START; i <= REFUERZO_COLS_END; i++) {
+    for (let i = refuerzoStart; i <= refuerzoEnd; i++) {
       const cell = row[i]
       if (cell != null && String(cell).trim() !== '') {
         refuerzos.push(String(cell).trim())

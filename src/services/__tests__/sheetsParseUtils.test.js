@@ -201,6 +201,40 @@ describe('parseRows', () => {
     expect(result.candidates).toHaveLength(1)
     expect(result.candidates[0].precio).toBe(0)
   })
+
+  it('detects column ranges dynamically: 16 members + 2 refuerzos (real 2026 layout)', () => {
+    // Real 2026 layout: 16 member cols (incl. Javi), 2 refuerzo cols, then ASISTENTE/€PERSONA.
+    // Without dynamic detection, Javi/ASISTENTE/€PERSONA would be wrongly read as refuerzos.
+    const header = new Array(26).fill('')
+    header[2] = 'FECHA'
+    header[3] = 'ACTO'
+    header[4] = '€'
+    header[5] = '€'
+    const memberNames = ['Martín', 'Mónica', 'René', 'Dani', 'Marta', 'Miguel', 'Pablo', 'Nacho',
+      'Raúl', 'Carlos', 'Samuel', 'Juan', 'Pablo C', 'Pelayo', 'Jaime', 'Javi']
+    memberNames.forEach((n, i) => { header[6 + i] = n })
+    header[22] = 'Refuerzo 1'
+    header[23] = 'Refuerzo 2'
+    header[24] = 'ASISTENTE'
+    header[25] = '€/PERSONA'
+
+    const dataRow = new Array(26).fill('')
+    dataRow[2] = '9/05/2026'
+    dataRow[3] = 'RUTA CERVEZA'
+    dataRow[4] = '650'
+    dataRow[5] = '650'
+    memberNames.forEach((_, i) => { dataRow[6 + i] = 'x' })
+    dataRow[24] = '16'   // ASISTENTE — must NOT be read as refuerzo
+    dataRow[25] = '40'   // €/PERSONA — must NOT be read as refuerzo
+
+    const result = parseRows({ values: [[], [], [], header, dataRow] })
+    expect(result.candidates).toHaveLength(1)
+    const c = result.candidates[0]
+    expect(Object.keys(c.asistenciaPorColumna)).toHaveLength(16)
+    expect(c.asistenciaPorColumna['Javi']).toBe('voy')
+    expect(c.refuerzos).toEqual([])
+    expect(result.headerColumns['Javi']).toBe(21)
+  })
 })
 
 import { resolveUidForColumn } from '../sheetsParseUtils'
