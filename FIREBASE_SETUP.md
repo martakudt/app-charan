@@ -86,7 +86,7 @@ Desplegar `firestore.rules` desde Firebase Console (Rules → Edit → pegar con
 
 ### 4. Configuración inicial en la app
 
-1. Abrir la app como `marta.torres@quantia.es`.
+1. Abrir la app como `martatorresg15@gmail.com`.
 2. Ir a Gestión.
 3. Pulsar Configurar en el bloque "Sincronización Google Sheets".
 4. Pegar la URL de la Google Sheet CuentasCharanga.

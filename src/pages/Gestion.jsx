@@ -8,7 +8,7 @@ import Modal from '../components/ui/Modal'
 import SheetsSyncPanel from '../components/gestion/SheetsSyncPanel'
 import './gestion.css'
 
-const OWNER_EMAIL = 'marta.torres@quantia.es'
+const OWNER_EMAIL = 'martatorresg15@gmail.com'
 
 function getInitials(name) {
   if (!name) return '?'

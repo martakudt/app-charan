@@ -20,7 +20,7 @@ service cloud.firestore {
 
     function isOwner() {
       return request.auth != null
-        && request.auth.token.email == 'marta.torres@quantia.es';
+        && request.auth.token.email == 'martatorresg15@gmail.com';
     }
 
     // Users
