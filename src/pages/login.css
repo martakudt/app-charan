@@ -47,6 +47,31 @@
   min-height: 20px;
 }
 
+.login-info {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  background: var(--color-background);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin: 0;
+}
+
+.login-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  text-align: right;
+  padding: 0;
+  margin: -4px 0 4px;
+  cursor: pointer;
+  align-self: flex-end;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
 .login-toggle {
   color: var(--color-primary);
   font-size: 0.875rem;
