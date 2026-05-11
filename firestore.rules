@@ -18,6 +18,11 @@ service cloud.firestore {
       return userData.rol == 'admin' || userData.permisos[perm] == true;
     }
 
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email == 'marta.torres@quantia.es';
+    }
+
     // Users
     match /users/{uid} {
       allow create: if request.auth != null && request.auth.uid == uid
@@ -45,6 +50,12 @@ service cloud.firestore {
     match /partituras/{scoreId} {
       allow read: if isApproved();
       allow create, update, delete: if isApproved() && hasPermission('partituras');
+    }
+
+    // Sheets sync config (owner-writable, all approved users can read)
+    match /config/{docId} {
+      allow read: if isApproved();
+      allow write: if isOwner();
     }
   }
 }
