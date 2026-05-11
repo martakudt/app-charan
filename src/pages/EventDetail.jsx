@@ -196,18 +196,28 @@ export default function EventDetail() {
         })}
       </Card>
 
-      {canManageEvents && !event.cerrado && (
+      {canManageEvents && (
         <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <Button variant="secondary" onClick={() => navigate(`/agenda/${id}/editar`)}>
             Editar
           </Button>
-          <Button variant="ghost" onClick={async () => {
-            if (window.confirm('¿Cerrar este evento? Nadie podrá votar después.')) {
-              await updateEvent(id, { cerrado: true })
-            }
-          }}>
-            Cerrar evento
-          </Button>
+          {event.cerrado ? (
+            <Button variant="ghost" onClick={async () => {
+              if (window.confirm('¿Reabrir este evento? Volverá a permitir votos.')) {
+                await updateEvent(id, { cerrado: false })
+              }
+            }}>
+              Reabrir evento
+            </Button>
+          ) : (
+            <Button variant="ghost" onClick={async () => {
+              if (window.confirm('¿Cerrar este evento? Nadie podrá votar después.')) {
+                await updateEvent(id, { cerrado: true })
+              }
+            }}>
+              Cerrar evento
+            </Button>
+          )}
         </div>
       )}
     </div>
