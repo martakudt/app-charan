@@ -238,3 +238,138 @@ describe('resolveUidForColumn', () => {
     expect(resolveUidForColumn('Pablo C', users)).toBe('u3')
   })
 })
+
+import { buildDiff } from '../sheetsParseUtils'
+
+describe('buildDiff', () => {
+  const users = [
+    { id: 'u1', nombre: 'Martín' },
+    { id: 'u2', nombre: 'Mónica' },
+    { id: 'u3', nombre: 'Pablo Cubillas', claveHistorico: 'pabloc' },
+  ]
+
+  function fbEvent({ id, fecha, nombre, tipo = 'actuacion', precio = 0, precioTotal = 0, asistencia = {} }) {
+    return { id, fecha: { toDate: () => new Date(fecha) }, nombre, tipo, precio, precioTotal, asistencia }
+  }
+
+  function candidate({ fecha, nombre, precio = 0, precioTotal = precio, asistencia = {}, refuerzos = [] }) {
+    return { fecha: new Date(fecha), nombre, precio, precioTotal, asistenciaPorColumna: asistencia, refuerzos }
+  }
+
+  it('classifies a brand-new candidate as aCrear', () => {
+    const diff = buildDiff({
+      candidates: [candidate({ fecha: '2026-01-31', nombre: 'CUMPLEAÑOS', precio: 300 })],
+      eventos: [],
+      users,
+      year: 2026,
+    })
+    expect(diff.aCrear).toHaveLength(1)
+    expect(diff.aActualizar).toEqual([])
+    expect(diff.soloEnApp).toEqual([])
+  })
+
+  it('matches by same day + normalized name -> aActualizar', () => {
+    const diff = buildDiff({
+      candidates: [candidate({ fecha: '2026-02-08', nombre: 'DOMINGO EMBUTIDO', precio: 600 })],
+      eventos: [fbEvent({ id: 'e1', fecha: '2026-02-08T10:00:00', nombre: 'Domingo Embutido', precio: 500 })],
+      users,
+      year: 2026,
+    })
+    expect(diff.aActualizar).toHaveLength(1)
+    expect(diff.aActualizar[0].eventoExistente.id).toBe('e1')
+    expect(diff.aActualizar[0].cambios.precio).toEqual({ antes: 500, despues: 600 })
+  })
+
+  it('treats different name on same day as separate events', () => {
+    const diff = buildDiff({
+      candidates: [
+        candidate({ fecha: '2026-02-21', nombre: 'PEÑAS CARNAVAL', precio: 550 }),
+        candidate({ fecha: '2026-02-21', nombre: 'ACTUACIÓN DISCOTECA', precio: 450 }),
+      ],
+      eventos: [fbEvent({ id: 'e1', fecha: '2026-02-21T10:00:00', nombre: 'PEÑAS CARNAVAL', precio: 0 })],
+      users,
+      year: 2026,
+    })
+    expect(diff.aActualizar).toHaveLength(1)
+    expect(diff.aCrear).toHaveLength(1)
+    expect(diff.aCrear[0].candidate.nombre).toBe('ACTUACIÓN DISCOTECA')
+  })
+
+  it('lists Firestore events of given year+actuacion not in GS as soloEnApp', () => {
+    const diff = buildDiff({
+      candidates: [],
+      eventos: [
+        fbEvent({ id: 'e1', fecha: '2026-04-25T10:00:00', nombre: 'SAN MARCOS', precio: 600 }),
+        fbEvent({ id: 'e2', fecha: '2025-04-25T10:00:00', nombre: 'OLD', precio: 600 }),
+        fbEvent({ id: 'e3', fecha: '2026-04-25T10:00:00', nombre: 'ENSAYO', tipo: 'ensayo' }),
+      ],
+      users,
+      year: 2026,
+    })
+    expect(diff.soloEnApp).toHaveLength(1)
+    expect(diff.soloEnApp[0].id).toBe('e1')
+  })
+
+  it('resolves attendance to uids and lists unmapped column names', () => {
+    const diff = buildDiff({
+      candidates: [candidate({
+        fecha: '2026-01-31',
+        nombre: 'X',
+        precio: 100,
+        asistencia: { 'Martín': 'voy', 'Mónica': 'voy', 'Titi': 'voy', 'Pablo C': 'voy' },
+      })],
+      eventos: [],
+      users,
+      year: 2026,
+    })
+    expect(diff.aCrear[0].asistenciaResuelta).toEqual({ u1: 'voy', u2: 'voy', u3: 'voy' })
+    expect(diff.miembrosNoVinculados).toEqual(['Titi'])
+  })
+
+  it('detects asistenciaCount change in cambios', () => {
+    const diff = buildDiff({
+      candidates: [candidate({
+        fecha: '2026-02-08',
+        nombre: 'DOMINGO',
+        precio: 500,
+        asistencia: { 'Martín': 'voy', 'Mónica': 'voy' },
+      })],
+      eventos: [fbEvent({
+        id: 'e1', fecha: '2026-02-08T10:00:00', nombre: 'DOMINGO', precio: 500,
+        asistencia: { u1: 'voy' },
+      })],
+      users,
+      year: 2026,
+    })
+    expect(diff.aActualizar[0].cambios.asistenciaCount).toEqual({ antes: 1, despues: 2 })
+  })
+
+  it('does not list unchanged updates with empty cambios as aActualizar (skip noop)', () => {
+    const diff = buildDiff({
+      candidates: [candidate({
+        fecha: '2026-02-08', nombre: 'DOMINGO', precio: 500, precioTotal: 500,
+        asistencia: { 'Martín': 'voy' }, refuerzos: [],
+      })],
+      eventos: [fbEvent({
+        id: 'e1', fecha: '2026-02-08T10:00:00', nombre: 'DOMINGO',
+        precio: 500, precioTotal: 500, asistencia: { u1: 'voy' },
+      })],
+      users,
+      year: 2026,
+    })
+    expect(diff.aActualizar).toEqual([])
+  })
+
+  it('miembrosNoVinculados is unique across candidates', () => {
+    const diff = buildDiff({
+      candidates: [
+        candidate({ fecha: '2026-01-31', nombre: 'A', precio: 100, asistencia: { 'Titi': 'voy' } }),
+        candidate({ fecha: '2026-02-01', nombre: 'B', precio: 100, asistencia: { 'Titi': 'voy' } }),
+      ],
+      eventos: [],
+      users,
+      year: 2026,
+    })
+    expect(diff.miembrosNoVinculados).toEqual(['Titi'])
+  })
+})

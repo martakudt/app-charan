@@ -128,3 +128,88 @@ export function resolveUidForColumn(columnName, users) {
   }
   return null
 }
+
+function sameDay(a, b) {
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate()
+}
+
+function eventoDate(evento) {
+  return evento.fecha?.toDate ? evento.fecha.toDate() : new Date(evento.fecha)
+}
+
+function asistenciaCount(asistencia) {
+  return Object.values(asistencia || {}).filter((v) => v === 'voy').length
+}
+
+function refuerzosCount(refuerzos) {
+  if (Array.isArray(refuerzos)) return refuerzos.length
+  return refuerzos || 0
+}
+
+export function buildDiff({ candidates, eventos, users, year }) {
+  const eventosDelAnyo = eventos.filter((e) => {
+    const d = eventoDate(e)
+    return d.getFullYear() === year && e.tipo === 'actuacion'
+  })
+
+  const aCrear = []
+  const aActualizar = []
+  const matchedEventoIds = new Set()
+  const miembrosNoVinculadosSet = new Set()
+
+  for (const candidate of candidates) {
+    const asistenciaResuelta = {}
+    for (const colName of Object.keys(candidate.asistenciaPorColumna)) {
+      const uid = resolveUidForColumn(colName, users)
+      if (uid) asistenciaResuelta[uid] = 'voy'
+      else miembrosNoVinculadosSet.add(colName)
+    }
+
+    const candidateNombreNorm = normalizeName(candidate.nombre)
+    const match = eventosDelAnyo.find((e) => {
+      if (matchedEventoIds.has(e.id)) return false
+      if (!sameDay(eventoDate(e), candidate.fecha)) return false
+      return normalizeName(e.nombre) === candidateNombreNorm
+    })
+
+    if (!match) {
+      aCrear.push({ candidate, asistenciaResuelta })
+      continue
+    }
+
+    matchedEventoIds.add(match.id)
+
+    const cambios = {}
+    if ((match.precio || 0) !== candidate.precio) {
+      cambios.precio = { antes: match.precio || 0, despues: candidate.precio }
+    }
+    if ((match.precioTotal || match.precio || 0) !== candidate.precioTotal) {
+      cambios.precioTotal = { antes: match.precioTotal || match.precio || 0, despues: candidate.precioTotal }
+    }
+    const asistAntes = asistenciaCount(match.asistencia)
+    const asistDespues = Object.keys(asistenciaResuelta).length
+    if (asistAntes !== asistDespues) {
+      cambios.asistenciaCount = { antes: asistAntes, despues: asistDespues }
+    }
+    const refAntes = refuerzosCount(match.refuerzos)
+    const refDespues = candidate.refuerzos.length
+    if (refAntes !== refDespues) {
+      cambios.refuerzosCount = { antes: refAntes, despues: refDespues }
+    }
+
+    if (Object.keys(cambios).length > 0) {
+      aActualizar.push({ candidate, eventoExistente: match, asistenciaResuelta, cambios })
+    }
+  }
+
+  const soloEnApp = eventosDelAnyo.filter((e) => !matchedEventoIds.has(e.id))
+
+  return {
+    aCrear,
+    aActualizar,
+    soloEnApp,
+    miembrosNoVinculados: Array.from(miembrosNoVinculadosSet),
+  }
+}
