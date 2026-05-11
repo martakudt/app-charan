@@ -26,23 +26,29 @@ export function clearToken() {
   tokenExpiresAt = 0
 }
 
-export function requestSheetsToken() {
+async function waitForGis(timeoutMs = 3000) {
+  const start = Date.now()
+  while (!gisReady()) {
+    if (Date.now() - start > timeoutMs) return false
+    await new Promise((r) => setTimeout(r, 100))
+  }
+  return true
+}
+
+export async function requestSheetsToken() {
+  if (!isOAuthConfigured()) {
+    throw new Error('OAuth no configurado: falta VITE_GOOGLE_OAUTH_CLIENT_ID')
+  }
+
+  const ready = await waitForGis()
+  if (!ready) {
+    throw new Error('Google Identity Services no está disponible. ¿Has cargado el script?')
+  }
+
+  const cached = getCachedToken()
+  if (cached) return cached
+
   return new Promise((resolve, reject) => {
-    if (!isOAuthConfigured()) {
-      reject(new Error('OAuth no configurado: falta VITE_GOOGLE_OAUTH_CLIENT_ID'))
-      return
-    }
-    if (!gisReady()) {
-      reject(new Error('Google Identity Services no está disponible. ¿Has cargado el script?'))
-      return
-    }
-
-    const cached = getCachedToken()
-    if (cached) {
-      resolve(cached)
-      return
-    }
-
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPE,
@@ -56,7 +62,6 @@ export function requestSheetsToken() {
         resolve(tokenInMemory)
       },
     })
-
     tokenClient.requestAccessToken({ prompt: '' })
   })
 }
