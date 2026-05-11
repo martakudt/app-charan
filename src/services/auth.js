@@ -1,6 +1,7 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
 } from 'firebase/auth'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
@@ -23,6 +24,10 @@ export async function register(email, password, nombre, instrumento) {
 export async function login(email, password) {
   const { user } = await signInWithEmailAndPassword(auth, email, password)
   return user
+}
+
+export async function resetPassword(email) {
+  await sendPasswordResetEmail(auth, email)
 }
 
 export async function logout() {

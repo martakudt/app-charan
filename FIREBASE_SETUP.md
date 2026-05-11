@@ -49,3 +49,45 @@ After registering in the app:
 ## 7. Deploy Firestore rules
 
 Copy contents of `firestore.rules` to Firestore > Rules tab and publish.
+
+---
+
+## Google Sheets Sync (solo owner)
+
+Para que Marta pueda sincronizar los actos desde la Google Sheet de cuentas:
+
+### 1. Google Cloud Console
+
+1. Ir a https://console.cloud.google.com.
+2. Crear o seleccionar un proyecto (puede ser el mismo de Firebase).
+3. Habilitar **Google Sheets API** (APIs & Services → Library → buscar "Google Sheets API" → Enable).
+4. Crear credenciales OAuth:
+   - APIs & Services → Credentials → Create Credentials → OAuth client ID.
+   - Si pide configurar OAuth consent screen primero: User Type "External", añadir tu email como Test User, scopes mínimos.
+   - Application type: **Web application**.
+   - Authorized JavaScript origins:
+     - `http://localhost:5173`
+     - `https://<tu-dominio-netlify>` (ej: `https://lamandanga.netlify.app`)
+   - Authorized redirect URIs: dejar vacío (usamos token client, no redirect).
+5. Copiar el Client ID generado.
+
+### 2. Variables de entorno
+
+En `.env` local:
+```
+VITE_GOOGLE_OAUTH_CLIENT_ID=tu-client-id.apps.googleusercontent.com
+```
+
+En Netlify: Site Settings → Environment Variables → añadir `VITE_GOOGLE_OAUTH_CLIENT_ID`.
+
+### 3. Reglas Firestore
+
+Desplegar `firestore.rules` desde Firebase Console (Rules → Edit → pegar contenido del fichero → Publish).
+
+### 4. Configuración inicial en la app
+
+1. Abrir la app como `martatorresg15@gmail.com`.
+2. Ir a Gestión.
+3. Pulsar Configurar en el bloque "Sincronización Google Sheets".
+4. Pegar la URL de la Google Sheet CuentasCharanga.
+5. Pulsar Sincronizar 2026, autorizar Google en el popup, revisar la vista previa, confirmar.
