@@ -372,4 +372,21 @@ describe('buildDiff', () => {
     })
     expect(diff.miembrosNoVinculados).toEqual(['Titi'])
   })
+
+  it('drops candidates whose date is outside the requested year and reports them', () => {
+    const diff = buildDiff({
+      candidates: [
+        candidate({ fecha: '2026-01-31', nombre: 'IN', precio: 100 }),
+        candidate({ fecha: '2025-12-31', nombre: 'BEFORE', precio: 200 }),
+        candidate({ fecha: '2027-01-01', nombre: 'AFTER', precio: 300 }),
+      ],
+      eventos: [],
+      users,
+      year: 2026,
+    })
+    expect(diff.aCrear).toHaveLength(1)
+    expect(diff.aCrear[0].candidate.nombre).toBe('IN')
+    expect(diff.candidatosFueraDeAnyo).toHaveLength(2)
+    expect(diff.candidatosFueraDeAnyo.map(c => c.nombre)).toEqual(['BEFORE', 'AFTER'])
+  })
 })

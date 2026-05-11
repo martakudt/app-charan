@@ -104,6 +104,12 @@ export default function SheetsSyncPreviewModal({ diff, tabName, currentUserEmail
         </div>
       )}
 
+      {diff.candidatosFueraDeAnyo && diff.candidatosFueraDeAnyo.length > 0 && (
+        <div className="preview-warn">
+          Filas ignoradas (fecha fuera de {tabName}): {diff.candidatosFueraDeAnyo.map(c => `${c.nombre} (${formatShort(c.fecha)})`).join(', ')}.
+        </div>
+      )}
+
       {error && <div className="preview-error">{error}</div>}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>

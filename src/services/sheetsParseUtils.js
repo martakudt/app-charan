@@ -154,12 +154,19 @@ export function buildDiff({ candidates, eventos, users, year }) {
     return d.getFullYear() === year && e.tipo === 'actuacion'
   })
 
+  const candidatosFueraDeAnyo = []
+  const candidatosInYear = []
+  for (const c of candidates) {
+    if (c.fecha.getFullYear() !== year) candidatosFueraDeAnyo.push(c)
+    else candidatosInYear.push(c)
+  }
+
   const aCrear = []
   const aActualizar = []
   const matchedEventoIds = new Set()
   const miembrosNoVinculadosSet = new Set()
 
-  for (const candidate of candidates) {
+  for (const candidate of candidatosInYear) {
     const asistenciaResuelta = {}
     for (const colName of Object.keys(candidate.asistenciaPorColumna)) {
       const uid = resolveUidForColumn(colName, users)
@@ -211,5 +218,6 @@ export function buildDiff({ candidates, eventos, users, year }) {
     aActualizar,
     soloEnApp,
     miembrosNoVinculados: Array.from(miembrosNoVinculadosSet),
+    candidatosFueraDeAnyo,
   }
 }
