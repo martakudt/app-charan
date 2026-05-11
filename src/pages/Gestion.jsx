@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { useUsers } from '../hooks/useUsers'
 import { useEvents } from '../hooks/useEvents'
+import { useAuth } from '../context/AuthContext'
 import { updateEvent } from '../services/firestore'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
+import SheetsSyncPanel from '../components/gestion/SheetsSyncPanel'
 import './gestion.css'
+
+const OWNER_EMAIL = 'marta.torres@quantia.es'
 
 function getInitials(name) {
   if (!name) return '?'
@@ -407,6 +411,8 @@ function IngresosChart({ actuaciones }) {
 export default function Gestion() {
   const { users } = useUsers()
   const { events } = useEvents()
+  const { userData } = useAuth()
+  const isOwner = userData?.email === OWNER_EMAIL
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState('todos')
 
@@ -498,6 +504,15 @@ export default function Gestion() {
           ))}
         </select>
       </div>
+
+      {isOwner && (
+        <SheetsSyncPanel
+          year={selectedYear}
+          eventos={events}
+          users={users}
+          currentUserEmail={userData?.email}
+        />
+      )}
 
       <IngresosChart actuaciones={pastActuaciones} />
 
