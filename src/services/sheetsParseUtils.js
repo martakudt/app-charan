@@ -105,3 +105,26 @@ export function parseRows({ values }) {
 
   return { candidates, headerColumns }
 }
+
+export function resolveUidForColumn(columnName, users) {
+  const target = normalizeName(columnName)
+  if (!target) return null
+
+  // Compare against claveHistorico with target spaces stripped
+  // (e.g. "Pablo C" -> "pabloc" matches claveHistorico "pabloc")
+  const targetNoSpaces = target.replace(/\s+/g, '')
+  for (const u of users) {
+    if (u.claveHistorico && normalizeName(u.claveHistorico) === targetNoSpaces) return u.id
+  }
+  // First name match against full normalized target.
+  // Skip users with claveHistorico — those are matched ONLY by claveHistorico,
+  // so an ambiguous column like "Pablo" doesn't accidentally match a user
+  // whose dedicated column is "Pablo C" (claveHistorico='pabloc').
+  for (const u of users) {
+    if (!u.nombre) continue
+    if (u.claveHistorico) continue
+    const firstName = normalizeName(u.nombre.split(/\s+/)[0])
+    if (firstName === target) return u.id
+  }
+  return null
+}

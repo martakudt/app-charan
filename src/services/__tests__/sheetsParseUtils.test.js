@@ -202,3 +202,39 @@ describe('parseRows', () => {
     expect(result.candidates[0].precio).toBe(0)
   })
 })
+
+import { resolveUidForColumn } from '../sheetsParseUtils'
+
+describe('resolveUidForColumn', () => {
+  const users = [
+    { id: 'u1', nombre: 'Martín García' },
+    { id: 'u2', nombre: 'Mónica López' },
+    { id: 'u3', nombre: 'Pablo Cubillas', claveHistorico: 'pabloc' },
+    { id: 'u4', nombre: 'Pablo Sánchez' },
+    { id: 'u5', nombre: 'René Ruiz', claveHistorico: 'rene' },
+    { id: 'u6', nombre: 'Samuel Pérez', claveHistorico: 'samuel' },
+  ]
+
+  it('matches by claveHistorico first', () => {
+    expect(resolveUidForColumn('Pablo C', users)).toBe('u3')
+  })
+
+  it('matches by first name (normalized) if no claveHistorico match', () => {
+    expect(resolveUidForColumn('Martín', users)).toBe('u1')
+    expect(resolveUidForColumn('Mónica', users)).toBe('u2')
+  })
+
+  it('handles tildes consistently', () => {
+    expect(resolveUidForColumn('Rene', users)).toBe('u5') // claveHistorico 'rene'
+    expect(resolveUidForColumn('Martin', users)).toBe('u1') // first name match
+  })
+
+  it('returns null when nothing matches', () => {
+    expect(resolveUidForColumn('Titi', users)).toBeNull()
+  })
+
+  it('claveHistorico beats first-name match for ambiguous columns', () => {
+    expect(resolveUidForColumn('Pablo', users)).toBe('u4')
+    expect(resolveUidForColumn('Pablo C', users)).toBe('u3')
+  })
+})
