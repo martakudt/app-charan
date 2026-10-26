@@ -26,11 +26,16 @@ service cloud.firestore {
     // Users
     match /users/{uid} {
       allow create: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.estado == 'pendiente';
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.rol == 'miembro'
+        && request.resource.data.permisos.partituras == false
+        && request.resource.data.permisos.calendario == false;
       allow read: if request.auth != null
         && (request.auth.uid == uid || isApproved());
-      allow update: if request.auth != null
-        && (request.auth.uid == uid || isAdmin());
+      // Users can only edit their own name/instrument; estado, rol and permisos are admin-only
+      allow update: if isAdmin()
+        || (request.auth != null && request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'instrumento']));
     }
 
     // Events
