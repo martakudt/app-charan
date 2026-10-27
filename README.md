@@ -6,6 +6,19 @@ Hecha con React + Vite, con Firebase (Auth, Firestore, Storage) como backend y d
 
 > **Proyecto personal.** Esta app está hecha a medida para mi charanga y la usamos solo sus miembros: el registro requiere aprobación de un administrador. El código es público como portfolio y por si sirve de referencia, pero no es un producto genérico ni está pensada para que otros grupos la usen tal cual. Si quieres adaptarla a tu grupo, necesitarás tu propio proyecto de Firebase (ver [FIREBASE_SETUP.md](FIREBASE_SETUP.md)).
 
+## Capturas
+
+<table>
+  <tr>
+    <td align="center"><img src="img/img_1.jpeg" width="200" alt="Agenda"><br><sub>Agenda</sub></td>
+    <td align="center"><img src="img/img_2.jpeg" width="200" alt="Partituras"><br><sub>Partituras</sub></td>
+    <td align="center"><img src="img/img_3.jpeg" width="200" alt="Gestión"><br><sub>Gestión</sub></td>
+    <td align="center"><img src="img/img_4.jpeg" width="200" alt="Perfil"><br><sub>Perfil</sub></td>
+  </tr>
+</table>
+
+<sub>Los importes de las capturas son inventados.</sub>
+
 ## Funcionalidades
 
 - **Agenda**: crear, editar, cerrar y reabrir actos (actuaciones, ensayos…), con imagen, ubicación y asistencia de los miembros.
